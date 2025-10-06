@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="/" />
+    <meta charset="UTF-8" />
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
+    <meta name="description" content="AI Stock Insights Flutter web client" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Stock Insights</title>
+    <link rel="manifest" href="manifest.json" />
+    <script>
+      var serviceWorkerVersion = null;
+      window._flutter = window._flutter || {};
+    </script>
+    <script src="flutter.js" defer></script>
+    <style>
+      html,
+      body {
+        background-color: #0f172a;
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loading">Loading AI Stock Insights…</div>
+    <script>
+      window.addEventListener('load', function () {
+        _flutter.loader
+          .loadEntrypoint({
+            serviceWorker: {
+              serviceWorkerVersion: serviceWorkerVersion,
+            },
+          })
+          .then(function (engineInitializer) {
+            return engineInitializer.initializeEngine({
+              renderer: 'auto',
+              assetBase: './',
+            });
+          })
+          .then(function (appRunner) {
+            var loading = document.getElementById('loading');
+            if (loading) {
+              loading.remove();
+            }
+            return appRunner.runApp();
+          })
+          .catch(function (err) {
+            console.error('Flutter initialization failed:', err);
+          });
+      });
+    </script>
+  </body>
+</html>

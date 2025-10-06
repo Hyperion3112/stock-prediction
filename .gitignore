@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.env
+.venv/
+*.sqlite3
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+
+# Pytest cache
+.pytest_cache/
+
+# Flutter / Dart
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.dart_tool/
+build/
+flutter_app/build/
+flutter_app/.dart_tool/
+flutter_app/.pub-cache/
+flutter_app/.packages
+
+# VS Code
+.vscode/
+.idea/
+
+# Other
+coverage/
+.tmp/

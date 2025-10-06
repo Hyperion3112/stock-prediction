@@ -1,0 +1,11 @@
+yfinance>=0.2.27
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pandas>=1.5.0
+numpy>=1.24.0
+scikit-learn>=1.2.0
+joblib>=1.2.0
+yfinance>=0.2.27
+pytest>=7.0.0
+tensorflow>=2.12.0
+vaderSentiment>=3.3.2
