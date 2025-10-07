@@ -413,7 +413,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 duration: const Duration(milliseconds: 500),
                                 transitionBuilder: _sectionTransitionBuilder,
                                 child: state.overview == null
-                                    ? const SizedBox.shrink()
+                                    ? (state.isLoading 
+                                        ? const _OverviewLoadingSkeleton()
+                                        : const SizedBox.shrink())
                                     : _OverviewSection(
                                         key: ValueKey('overview-${state.overview!.metadata.ticker}-${state.overview!.metrics.latestClose}'),
                                         overview: state.overview!,
@@ -426,7 +428,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 duration: const Duration(milliseconds: 500),
                                 transitionBuilder: _sectionTransitionBuilder,
                                 child: state.forecast == null
-                                    ? const SizedBox.shrink()
+                                    ? (state.isLoading 
+                                        ? const _ForecastLoadingSkeleton()
+                                        : const SizedBox.shrink())
                                     : _ForecastSection(
                                         key: ValueKey('forecast-${state.forecast!.ticker}-${state.forecast!.forecast.length}'),
                                         forecast: state.forecast!,
@@ -819,6 +823,8 @@ class _OverviewSection extends StatelessWidget {
                   : LineChart(
                       key: ValueKey('history-${history.length}-${history.last.close}'),
                       _buildHistoryChart(history, accentColor),
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeInOutCubic,
                     ),
             ),
           ),
@@ -1068,6 +1074,8 @@ class _ForecastSection extends StatelessWidget {
                   : LineChart(
                       key: ValueKey('forecast-${forecast.ticker}-${forecast.forecast.length}-${history.length}'),
                       _buildForecastChart(history, forecast.forecast, forecast.indicators, accentColor, modelColor),
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeInOutCubic,
                     ),
             ),
           ),
@@ -2027,5 +2035,350 @@ class _BackgroundGridPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BackgroundGridPainter oldDelegate) {
     return oldDelegate.baseColor != baseColor || oldDelegate.accentOverlay != accentOverlay;
+  }
+}
+
+// Loading Skeleton Widgets
+class _LoadingSkeletonCard extends StatelessWidget {
+  const _LoadingSkeletonCard({
+    this.height = 200,
+    this.margin = const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+  });
+
+  final double height;
+  final EdgeInsetsGeometry margin;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      margin: margin,
+      decoration: BoxDecoration(
+        color: Colors.white.withAlphaFraction(0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlphaFraction(0.08)),
+      ),
+      child: _ShimmerEffect(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 150,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlphaFraction(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 100,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlphaFraction(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlphaFraction(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ShimmerEffect extends StatefulWidget {
+  const _ShimmerEffect({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ShimmerEffect> createState() => _ShimmerEffectState();
+}
+
+class _ShimmerEffectState extends State<_ShimmerEffect> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return ShaderMask(
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: const [
+                Colors.transparent,
+                Colors.white24,
+                Colors.transparent,
+              ],
+              stops: [
+                _controller.value - 0.3,
+                _controller.value,
+                _controller.value + 0.3,
+              ].map((e) => e.clamp(0.0, 1.0)).toList(),
+            ).createShader(bounds);
+          },
+          blendMode: BlendMode.srcATop,
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
+class _OverviewLoadingSkeleton extends StatelessWidget {
+  const _OverviewLoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlphaFraction(0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlphaFraction(0.08)),
+      ),
+      child: _ShimmerEffect(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlphaFraction(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlphaFraction(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: 180,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlphaFraction(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Metrics Grid
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: List.generate(
+                  4,
+                  (index) => Container(
+                    width: 140,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlphaFraction(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Chart
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: Container(
+                height: 280,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlphaFraction(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForecastLoadingSkeleton extends StatelessWidget {
+  const _ForecastLoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlphaFraction(0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlphaFraction(0.08)),
+      ),
+      child: _ShimmerEffect(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 150,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlphaFraction(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 80,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlphaFraction(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Chart
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+              child: Container(
+                height: 280,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlphaFraction(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Animated Button Wrapper for micro-interactions
+class _AnimatedPressable extends StatefulWidget {
+  const _AnimatedPressable({required this.child, this.onPressed});
+
+  final Widget child;
+  final VoidCallback? onPressed;
+
+  @override
+  State<_AnimatedPressable> createState() => _AnimatedPressableState();
+}
+
+class _AnimatedPressableState extends State<_AnimatedPressable> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse();
+    widget.onPressed?.call();
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: widget.onPressed != null ? _onTapDown : null,
+      onTapUp: widget.onPressed != null ? _onTapUp : null,
+      onTapCancel: widget.onPressed != null ? _onTapCancel : null,
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: child,
+          );
+        },
+        child: widget.child,
+      ),
+    );
   }
 }
