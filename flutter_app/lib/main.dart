@@ -880,7 +880,10 @@ class _OverviewSection extends StatelessWidget {
       lineTouchData: LineTouchData(
         enabled: true,
         handleBuiltInTouches: true,
-        touchSpotThreshold: 50, // Increased from 18 to make touches easier to detect
+        touchSpotThreshold: 100, // Increased even more for better detection on web
+        touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
+          // Explicit touch callback to ensure events are processed
+        },
         getTouchedSpotIndicator: (bar, indexes) {
           return indexes
               .map(
@@ -1154,7 +1157,10 @@ class _ForecastSection extends StatelessWidget {
       lineTouchData: LineTouchData(
         enabled: true,
         handleBuiltInTouches: true,
-        touchSpotThreshold: 50, // Increased from 18 to make touches easier to detect
+        touchSpotThreshold: 100, // Increased even more for better detection on web
+        touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
+          // Explicit touch callback to ensure events are processed
+        },
         getTouchedSpotIndicator: (bar, indexes) {
           return indexes
               .map(
