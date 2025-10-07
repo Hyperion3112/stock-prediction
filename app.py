@@ -40,6 +40,7 @@ PRESET_MAP = {
 INTERVAL_OPTIONS = ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"]
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_MODEL_DIR = BASE_DIR / "models"
+UTC = timezone.utc
 NEWS_RESULT_LIMIT = 10
 SENTIMENT_ANALYZER = SentimentIntensityAnalyzer() if SentimentIntensityAnalyzer else None
 
@@ -642,32 +643,8 @@ app.add_middleware(
 
 
 @app.get("/health")
-def health_check() -> dict:
-    """Simple health check endpoint."""
-    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
-
-
-@app.get("/health/forecast")
-def health_forecast_check() -> dict:
-    """Health check for forecast dependencies."""
-    try:
-        import tensorflow as tf
-        import yfinance as yf
-        from sklearn.preprocessing import MinMaxScaler
-        
-        return {
-            "status": "ok",
-            "tensorflow_version": tf.__version__,
-            "yfinance_available": True,
-            "sklearn_available": True,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e),
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
+def healthcheck() -> dict[str, str]:
+    return {"status": "ok", "timestamp": datetime.now(UTC).isoformat(timespec="seconds")}
 
 
 @app.get("/overview", response_model=OverviewResponse)
@@ -721,35 +698,17 @@ def get_forecast(
     use_lstm: bool = Query(True, description="Whether to require an LSTM forecast"),
     window: int = Query(20, ge=5, le=120, description="Rolling window for LSTM inputs"),
 ) -> ForecastResponse:
-    import logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-    
     try:
-        logger.info(f"Forecast request: ticker={ticker}, days={days}, interval={interval}, use_lstm={use_lstm}")
-        
         start = _parse_iso_date(start_date)
         end = _parse_iso_date(end_date)
         default_days = max(days * 3, 180)
         start, end = _resolve_date_range(start, end, default_days)
-        
-        logger.info(f"Date range resolved: start={start}, end={end}")
     except ValueError as exc:
-        logger.error(f"Date parsing error: {exc}")
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    try:
-        logger.info(f"Loading data for {ticker}")
-        data = load_data(ticker, start, end, interval)
-        if data is None or data.empty:
-            logger.warning(f"No data available for {ticker}")
-            raise HTTPException(status_code=404, detail="No price data available for the requested configuration.")
-        logger.info(f"Data loaded: {len(data)} rows")
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error loading data: {e}")
-        raise HTTPException(status_code=500, detail=f"Error loading data: {str(e)}") from e
+    data = load_data(ticker, start, end, interval)
+    if data is None or data.empty:
+        raise HTTPException(status_code=404, detail="No price data available for the requested configuration.")
 
     ticker_clean = ticker.strip().upper()
     model_catalog = list_available_models()
@@ -759,27 +718,44 @@ def get_forecast(
     note: Optional[str] = None
     train_error: Optional[str] = None
 
-    logger.info(f"LSTM requested: {use_lstm}, Models available: {model_catalog}")
-
-    # Try to use existing LSTM model first, skip training to avoid OOM
-    if use_lstm and ticker_clean in model_catalog:
+    if use_lstm:
         try:
-            logger.info(f"Loading existing LSTM model for {ticker_clean}")
-            model_path, scaler_path = load_lstm_artifacts(ticker_clean, model_catalog)
-            forecast_df = forecast_lstm_inference(data, model_path, scaler_path, days=days, window=window)
+            forecast_df = forecast_lstm_autotrain(
+                data,
+                days=days,
+                window=window,
+                ticker=ticker_clean,
+                persist=True,
+            )
             source = "lstm"
-            logger.info(f"LSTM forecast generated successfully")
-        except Exception as exc:
-            logger.error(f"LSTM inference failed: {exc}")
-            train_error = str(exc)
+        except Exception as train_exc:
+            train_error = str(train_exc)
+            # refresh catalog in case training succeeded partially and saved artifacts
+            model_catalog = list_available_models()
+            if ticker_clean in model_catalog:
+                try:
+                    model_path, scaler_path = load_lstm_artifacts(ticker_clean, model_catalog)
+                    forecast_df = forecast_lstm_inference(data, model_path, scaler_path, days=days, window=window)
+                    source = "lstm"
+                    note = f"Used cached LSTM due to training fallback: {train_error}"
+                except Exception as exc:  # pragma: no cover - inference issues
+                    train_error = f"{train_error}; cached model failed: {exc}"
+            else:
+                note = f"LSTM training unavailable: {train_error}"
 
-    # Fall back to linear if LSTM not available or failed
     if forecast_df is None:
-        logger.info(f"Using linear forecast (train_error: {train_error})")
-        forecast_df = forecast_linear(data, days=days)
-        source = "linear"
-        if train_error:
-            note = f"Used linear forecast (LSTM unavailable: {train_error})"
+        if use_lstm and ticker_clean in model_catalog:
+            try:
+                model_path, scaler_path = load_lstm_artifacts(ticker_clean, model_catalog)
+                forecast_df = forecast_lstm_inference(data, model_path, scaler_path, days=days, window=window)
+                source = "lstm"
+            except Exception as exc:  # pragma: no cover
+                train_error = f"{train_error or ''}; cached model failed: {exc}".strip("; ")
+        if forecast_df is None:
+            forecast_df = forecast_linear(data, days=days)
+            source = "linear"
+            if train_error:
+                note = f"Fell back to linear forecast because LSTM failed: {train_error}"
 
     history = _serialize_history(data, limit=max(days, 120))
     forecast_points = _serialize_forecast(forecast_df)
