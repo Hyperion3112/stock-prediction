@@ -111,7 +111,6 @@ class DashboardParams {
     required this.interval,
     required this.preset,
     required this.days,
-    required this.useLstm,
     required this.includeSentiment,
   });
 
@@ -119,7 +118,6 @@ class DashboardParams {
   final String interval;
   final String preset;
   final int days;
-  final bool useLstm;
   final bool includeSentiment;
 
   DashboardParams copyWith({
@@ -127,7 +125,6 @@ class DashboardParams {
     String? interval,
     String? preset,
     int? days,
-    bool? useLstm,
     bool? includeSentiment,
   }) {
     return DashboardParams(
@@ -135,7 +132,6 @@ class DashboardParams {
       interval: interval ?? this.interval,
       preset: preset ?? this.preset,
       days: days ?? this.days,
-      useLstm: useLstm ?? this.useLstm,
       includeSentiment: includeSentiment ?? this.includeSentiment,
     );
   }
@@ -160,7 +156,7 @@ class DashboardState {
   final bool isLoading;
   final String? errorMessage;
 
-  bool get hasLstmForTicker =>
+  bool get hasSavedLstmForTicker =>
       models.any((model) => model.ticker.toUpperCase() == params.ticker.toUpperCase());
 
   DashboardState copyWith({
@@ -230,7 +226,6 @@ class DashboardController extends ChangeNotifier {
             interval: '1d',
             preset: '6M',
             days: 30,
-            useLstm: true,
             includeSentiment: true,
           ),
         );
@@ -268,7 +263,7 @@ class DashboardController extends ChangeNotifier {
         ticker: params.ticker,
         days: params.days,
         interval: params.interval,
-        useLstm: params.useLstm && _state.hasLstmForTicker,
+        useLstm: true,
       );
       SentimentResponse? sentiment;
       if (params.includeSentiment) {
@@ -307,7 +302,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String preset = '6M';
   String interval = '1d';
   int horizon = 30;
-  bool useLstm = true;
   bool includeSentiment = true;
 
   @override
@@ -582,17 +576,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         FilterChip(
                           showCheckmark: false,
-                          label: const Text('Use LSTM model'),
-                          labelStyle: const TextStyle(color: Colors.white),
-                          selectedColor: accentColor.withAlphaFraction(0.25),
-                          disabledColor: Colors.white10,
-                          backgroundColor: Colors.white.withAlphaFraction(0.05),
-                          side: BorderSide(color: (useLstm ? accentColor : Colors.white24).withAlphaFraction(0.7)),
-                          selected: useLstm,
-                          onSelected: (value) => setState(() => useLstm = value),
-                        ),
-                        FilterChip(
-                          showCheckmark: false,
                           label: const Text('Include sentiment'),
                           labelStyle: const TextStyle(color: Colors.white),
                           selectedColor: accentColor.withAlphaFraction(0.25),
@@ -619,7 +602,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               preset: preset,
                               interval: interval,
                               days: horizon,
-                              useLstm: useLstm,
                               includeSentiment: includeSentiment,
                             );
                             controller.updateParams(params);
@@ -964,6 +946,28 @@ class _ForecastSection extends StatelessWidget {
           accentColor: accentColor,
         ),
         const SizedBox(height: 20),
+        if (forecast.note != null && forecast.note!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: GlassContainer(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              borderRadius: 18,
+              showShadow: false,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline_rounded, color: Colors.orangeAccent),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      forecast.note!,
+                      style: const TextStyle(color: Colors.orangeAccent, fontSize: 12.5, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         _HorizontalMetricRow(
           cards: [
             AnimatedMetricCard(
@@ -1020,6 +1024,22 @@ class _ForecastSection extends StatelessWidget {
         forecastData[0] = FlSpot(anchor.x, forecastData.first.y);
       }
     }
+    final historyLookup = {for (final spot in baseData) spot.x: spot.y};
+    final forecastLookup = {for (final spot in forecastData) spot.x: spot.y};
+
+    double? nearestValue(Map<double, double> source, double target, {double tolerance = 60000}) {
+      double? result;
+      var bestDistance = tolerance;
+      source.forEach((key, value) {
+        final distance = (key - target).abs();
+        if (distance <= bestDistance) {
+          bestDistance = distance;
+          result = value;
+        }
+      });
+      return result;
+    }
+
     final allValues = [...baseData, ...forecastData];
     if (allValues.isEmpty) {
       return LineChartData(lineBarsData: []);
@@ -1072,29 +1092,35 @@ class _ForecastSection extends StatelessWidget {
           fitInsideVertically: true,
           getTooltipItems: (spots) {
             if (spots.isEmpty) return [];
-            final date = DateTime.fromMillisecondsSinceEpoch(spots.first.x.toInt());
-            LineBarSpot? historySpot;
-            LineBarSpot? forecastSpot;
+            final touchedX = spots.first.x;
+            final date = DateTime.fromMillisecondsSinceEpoch(touchedX.toInt());
+
+            double? historyValue;
+            double? forecastValue;
             for (final spot in spots) {
               if (spot.barIndex == 0) {
-                historySpot = spot;
+                historyValue = spot.y;
               } else if (spot.barIndex == 1) {
-                forecastSpot = spot;
+                forecastValue = spot.y;
               }
             }
+
+            historyValue ??= nearestValue(historyLookup, touchedX);
+            forecastValue ??= nearestValue(forecastLookup, touchedX);
+
             final children = <TextSpan>[];
-            if (historySpot != null) {
+            if (historyValue != null) {
               children.add(
                 TextSpan(
-                  text: 'Actual: ${currencyFormat.format(historySpot.y)}\n',
+                  text: 'Actual: ${currencyFormat.format(historyValue)}\n',
                   style: TextStyle(color: accent, fontSize: 13, fontWeight: FontWeight.w600, height: 1.3),
                 ),
               );
             }
-            if (forecastSpot != null) {
+            if (forecastValue != null) {
               children.add(
                 TextSpan(
-                  text: 'Forecast: ${currencyFormat.format(forecastSpot.y)}',
+                  text: 'Forecast: ${currencyFormat.format(forecastValue)}',
                   style: TextStyle(color: modelColor, fontSize: 13, fontWeight: FontWeight.w600, height: 1.3),
                 ),
               );
@@ -1665,8 +1691,8 @@ class _DashboardHeader extends StatelessWidget {
                       _HeaderPill(
                         icon: Icons.memory_rounded,
                         label: '${state.models.length} models',
-                        accentColor: state.hasLstmForTicker ? Colors.greenAccent : accentColor,
-                        subtle: !state.hasLstmForTicker,
+                        accentColor: state.hasSavedLstmForTicker ? Colors.greenAccent : accentColor,
+                        subtle: !state.hasSavedLstmForTicker,
                       ),
                     _HeaderPill(
                       icon: Icons.timer_rounded,

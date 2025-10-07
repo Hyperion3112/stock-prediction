@@ -150,6 +150,7 @@ class ForecastResponse {
     required this.source,
     required this.forecast,
     required this.history,
+    this.note,
   });
 
   factory ForecastResponse.fromJson(Map<String, dynamic> json) => ForecastResponse(
@@ -161,12 +162,14 @@ class ForecastResponse {
         history: (json['history'] as List<dynamic>)
             .map((item) => PricePoint.fromJson(item as Map<String, dynamic>))
             .toList(),
+        note: json['note'] as String?,
       );
 
   final String ticker;
   final String source;
   final List<ForecastPoint> forecast;
   final List<PricePoint> history;
+  final String? note;
 }
 
 class SentimentRecord {

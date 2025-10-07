@@ -20,6 +20,7 @@ import yfinance as yf
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from sklearn.preprocessing import MinMaxScaler
 
 try:  # pragma: no cover - optional dependency
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -37,7 +38,8 @@ PRESET_MAP = {
 }
 
 INTERVAL_OPTIONS = ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"]
-DEFAULT_MODEL_DIR = "models"
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_MODEL_DIR = BASE_DIR / "models"
 NEWS_RESULT_LIMIT = 10
 SENTIMENT_ANALYZER = SentimentIntensityAnalyzer() if SentimentIntensityAnalyzer else None
 
@@ -140,6 +142,7 @@ class ForecastResponse(BaseModel):
     source: str
     forecast: list[ForecastPoint]
     history: list[PricePoint]
+    note: Optional[str] = None
 
 
 class SentimentRecord(BaseModel):
@@ -340,6 +343,83 @@ def forecast_lstm_inference(
     return pd.DataFrame({"Date": future_dates, "Forecast": preds})
 
 
+def forecast_lstm_autotrain(
+    data: pd.DataFrame,
+    days: int = 30,
+    window: int = 20,
+    epochs: int = 8,
+    learning_rate: float = 5e-4,
+    ticker: Optional[str] = None,
+    persist: bool = False,
+) -> pd.DataFrame:
+    closes_series = data.dropna(subset=["Close"])["Close"].astype(float)
+    closes = closes_series.values.reshape(-1, 1)
+    if len(closes) <= window:
+        raise ValueError("Not enough data points to train an LSTM model for the requested window size.")
+
+    scaler = MinMaxScaler(feature_range=(0.0, 1.0))
+    closes_scaled = scaler.fit_transform(closes).flatten()
+
+    sequences: list[np.ndarray] = []
+    targets: list[float] = []
+    for idx in range(window, len(closes_scaled)):
+        sequences.append(closes_scaled[idx - window : idx])
+        targets.append(float(closes_scaled[idx]))
+
+    if not sequences:
+        raise ValueError("Unable to create training sequences for LSTM model.")
+
+    X = np.array(sequences, dtype=np.float32).reshape(-1, window, 1)
+    y = np.array(targets, dtype=np.float32)
+
+    batch_size = int(min(32, len(X))) or 1
+
+    from tensorflow.keras.callbacks import EarlyStopping  # pylint: disable=import-error
+    from tensorflow.keras.layers import Dense, Dropout, LSTM  # pylint: disable=import-error
+    from tensorflow.keras.models import Sequential  # pylint: disable=import-error
+    from tensorflow.keras.optimizers import Adam  # pylint: disable=import-error
+
+    model = Sequential(
+        [
+            LSTM(32, input_shape=(window, 1), return_sequences=True),
+            Dropout(0.1),
+            LSTM(24),
+            Dense(12, activation="relu"),
+            Dense(1),
+        ]
+    )
+    model.compile(optimizer=Adam(learning_rate=learning_rate), loss="mse")
+
+    callbacks = [EarlyStopping(monitor="loss", patience=2, restore_best_weights=True)]
+
+    model.fit(X, y, epochs=epochs, batch_size=batch_size, shuffle=False, verbose=0, callbacks=callbacks)
+
+    history_scaled = list(closes_scaled)
+    preds_scaled: list[float] = []
+    for _ in range(days):
+        window_slice = np.array(history_scaled[-window:], dtype=np.float32).reshape(1, window, 1)
+        next_scaled = float(model.predict(window_slice, verbose=0)[0][0])
+        next_scaled = float(np.clip(next_scaled, 0.0, 1.0))
+        preds_scaled.append(next_scaled)
+        history_scaled.append(next_scaled)
+
+    preds = scaler.inverse_transform(np.array(preds_scaled, dtype=np.float32).reshape(-1, 1)).flatten()
+
+    if persist and ticker:
+        ticker_clean = ticker.strip().upper()
+        model_dir = Path(DEFAULT_MODEL_DIR)
+        model_dir.mkdir(parents=True, exist_ok=True)
+        model_path = model_dir / f"lstm_{ticker_clean}.keras"
+        scaler_path = model_dir / f"scaler_{ticker_clean}.save"
+        model.save(model_path, include_optimizer=False)
+        joblib.dump(scaler, scaler_path)
+
+    last_date = pd.to_datetime(data["Date"].iloc[-1])
+    future_dates = pd.date_range(last_date + pd.Timedelta(days=1), periods=days, freq="D")
+
+    return pd.DataFrame({"Date": future_dates, "Forecast": preds})
+
+
 def _analyze_headline_sentiment(headline: str | None, summary: str | None = None) -> tuple[str, float]:
     if not headline and not summary:
         return "Neutral", 0.0
@@ -426,6 +506,48 @@ def fetch_news_with_sentiment(ticker: str, limit: int = NEWS_RESULT_LIMIT) -> pd
     return news_df.head(limit)
 
 
+def _normalise_ticker_from_stem(stem: str) -> Optional[str]:
+    cleaned = stem.upper()
+    for prefix in ("LSTM_", "MODEL_", "STOCK_"):
+        if cleaned.startswith(prefix):
+            cleaned = cleaned[len(prefix) :]
+    cleaned = re.sub(r"[^A-Z0-9]", "", cleaned)
+    return cleaned or None
+
+
+def _find_scaler_path(model_root: Path, ticker: str) -> Optional[Path]:
+    candidates: Iterable[Path] = [
+        model_root / f"{ticker}_SCALER.pkl",
+        model_root / f"{ticker}_SCALER.save",
+        model_root / f"{ticker}_scaler.pkl",
+        model_root / f"{ticker}_scaler.save",
+        model_root / f"SCALER_{ticker}.pkl",
+        model_root / f"SCALER_{ticker}.save",
+        model_root / f"scaler_{ticker}.pkl",
+        model_root / f"scaler_{ticker}.save",
+        model_root / f"lstm_{ticker}_scaler.pkl",
+        model_root / f"lstm_{ticker}_scaler.save",
+        model_root / f"LSTM_{ticker}_SCALER.pkl",
+        model_root / f"LSTM_{ticker}_SCALER.save",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    ticker_lower = ticker.lower()
+    more_candidates = [
+        model_root / f"{ticker_lower}_scaler.pkl",
+        model_root / f"{ticker_lower}_scaler.save",
+        model_root / f"scaler_{ticker_lower}.pkl",
+        model_root / f"scaler_{ticker_lower}.save",
+        model_root / f"lstm_{ticker_lower}_scaler.pkl",
+        model_root / f"lstm_{ticker_lower}_scaler.save",
+    ]
+    for candidate in more_candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
 def list_available_models(model_dir: str = DEFAULT_MODEL_DIR) -> dict[str, dict[str, Path]]:
     model_root = Path(model_dir)
     if not model_root.is_dir():
@@ -434,9 +556,11 @@ def list_available_models(model_dir: str = DEFAULT_MODEL_DIR) -> dict[str, dict[
     models: dict[str, dict[str, Path]] = {}
     model_files: Iterable[Path] = list(model_root.glob("*.keras")) + list(model_root.glob("*.h5"))
     for model_path in model_files:
-        ticker = model_path.stem.upper()
-        scaler_path = model_root / f"{ticker}_scaler.pkl"
-        if scaler_path.exists():
+        ticker = _normalise_ticker_from_stem(model_path.stem)
+        if not ticker:
+            continue
+        scaler_path = _find_scaler_path(model_root, ticker)
+        if scaler_path:
             models[ticker] = {"model": model_path, "scaler": scaler_path}
     return models
 
@@ -588,20 +712,49 @@ def get_forecast(
     ticker_clean = ticker.strip().upper()
     model_catalog = list_available_models()
 
-    forecast_df: pd.DataFrame
+    forecast_df: Optional[pd.DataFrame] = None
     source = "linear"
+    note: Optional[str] = None
+    train_error: Optional[str] = None
 
     if use_lstm:
-        if ticker_clean not in model_catalog:
-            raise HTTPException(status_code=404, detail=f"No saved LSTM model found for {ticker_clean}.")
         try:
-            model_path, scaler_path = load_lstm_artifacts(ticker_clean, model_catalog)
-            forecast_df = forecast_lstm_inference(data, model_path, scaler_path, days=days, window=window)
+            forecast_df = forecast_lstm_autotrain(
+                data,
+                days=days,
+                window=window,
+                ticker=ticker_clean,
+                persist=True,
+            )
             source = "lstm"
-        except Exception as exc:  # pragma: no cover - inference issues
-            raise HTTPException(status_code=500, detail=f"Failed to compute LSTM forecast: {exc}") from exc
-    else:
-        forecast_df = forecast_linear(data, days=days)
+        except Exception as train_exc:
+            train_error = str(train_exc)
+            # refresh catalog in case training succeeded partially and saved artifacts
+            model_catalog = list_available_models()
+            if ticker_clean in model_catalog:
+                try:
+                    model_path, scaler_path = load_lstm_artifacts(ticker_clean, model_catalog)
+                    forecast_df = forecast_lstm_inference(data, model_path, scaler_path, days=days, window=window)
+                    source = "lstm"
+                    note = f"Used cached LSTM due to training fallback: {train_error}"
+                except Exception as exc:  # pragma: no cover - inference issues
+                    train_error = f"{train_error}; cached model failed: {exc}"
+            else:
+                note = f"LSTM training unavailable: {train_error}"
+
+    if forecast_df is None:
+        if use_lstm and ticker_clean in model_catalog:
+            try:
+                model_path, scaler_path = load_lstm_artifacts(ticker_clean, model_catalog)
+                forecast_df = forecast_lstm_inference(data, model_path, scaler_path, days=days, window=window)
+                source = "lstm"
+            except Exception as exc:  # pragma: no cover
+                train_error = f"{train_error or ''}; cached model failed: {exc}".strip("; ")
+        if forecast_df is None:
+            forecast_df = forecast_linear(data, days=days)
+            source = "linear"
+            if train_error:
+                note = f"Fell back to linear forecast because LSTM failed: {train_error}"
 
     history = _serialize_history(data, limit=max(days, 120))
     forecast_points = _serialize_forecast(forecast_df)
@@ -611,6 +764,7 @@ def get_forecast(
         source=source,
         forecast=forecast_points,
         history=history,
+        note=note,
     )
 
 
@@ -684,6 +838,7 @@ __all__ = [
     "app",
     "forecast_linear",
     "forecast_lstm_inference",
+    "forecast_lstm_autotrain",
     "load_data",
     "fetch_company_metadata",
 ]
