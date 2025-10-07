@@ -759,44 +759,27 @@ def get_forecast(
     note: Optional[str] = None
     train_error: Optional[str] = None
 
-    if use_lstm:
-        try:
-            forecast_df = forecast_lstm_autotrain(
-                data,
-                days=days,
-                window=window,
-                ticker=ticker_clean,
-                persist=True,
-            )
-            source = "lstm"
-        except Exception as train_exc:
-            train_error = str(train_exc)
-            # refresh catalog in case training succeeded partially and saved artifacts
-            model_catalog = list_available_models()
-            if ticker_clean in model_catalog:
-                try:
-                    model_path, scaler_path = load_lstm_artifacts(ticker_clean, model_catalog)
-                    forecast_df = forecast_lstm_inference(data, model_path, scaler_path, days=days, window=window)
-                    source = "lstm"
-                    note = f"Used cached LSTM due to training fallback: {train_error}"
-                except Exception as exc:  # pragma: no cover - inference issues
-                    train_error = f"{train_error}; cached model failed: {exc}"
-            else:
-                note = f"LSTM training unavailable: {train_error}"
+    logger.info(f"LSTM requested: {use_lstm}, Models available: {model_catalog}")
 
+    # Try to use existing LSTM model first, skip training to avoid OOM
+    if use_lstm and ticker_clean in model_catalog:
+        try:
+            logger.info(f"Loading existing LSTM model for {ticker_clean}")
+            model_path, scaler_path = load_lstm_artifacts(ticker_clean, model_catalog)
+            forecast_df = forecast_lstm_inference(data, model_path, scaler_path, days=days, window=window)
+            source = "lstm"
+            logger.info(f"LSTM forecast generated successfully")
+        except Exception as exc:
+            logger.error(f"LSTM inference failed: {exc}")
+            train_error = str(exc)
+
+    # Fall back to linear if LSTM not available or failed
     if forecast_df is None:
-        if use_lstm and ticker_clean in model_catalog:
-            try:
-                model_path, scaler_path = load_lstm_artifacts(ticker_clean, model_catalog)
-                forecast_df = forecast_lstm_inference(data, model_path, scaler_path, days=days, window=window)
-                source = "lstm"
-            except Exception as exc:  # pragma: no cover
-                train_error = f"{train_error or ''}; cached model failed: {exc}".strip("; ")
-        if forecast_df is None:
-            forecast_df = forecast_linear(data, days=days)
-            source = "linear"
-            if train_error:
-                note = f"Fell back to linear forecast because LSTM failed: {train_error}"
+        logger.info(f"Using linear forecast (train_error: {train_error})")
+        forecast_df = forecast_linear(data, days=days)
+        source = "linear"
+        if train_error:
+            note = f"Used linear forecast (LSTM unavailable: {train_error})"
 
     history = _serialize_history(data, limit=max(days, 120))
     forecast_points = _serialize_forecast(forecast_df)
