@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API URL Debug</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+        }
+        .ok { color: #4ade80; }
+        .error { color: #f87171; }
+    </style>
+</head>
+<body>
+    <h1>Flutter App API Debug</h1>
+    <div id="output">Checking...</div>
+    
+    <script>
+        const output = document.getElementById('output');
+        const apiUrl = 'https://stock-backend-nt1s.onrender.com';
+        
+        output.innerHTML = `
+            <p>Expected API URL: <span class="ok">${apiUrl}</span></p>
+            <p>Testing connection...</p>
+        `;
+        
+        fetch(apiUrl + '/health')
+            .then(r => r.json())
+            .then(data => {
+                output.innerHTML += `<p class="ok">✓ Backend is reachable!</p>`;
+                output.innerHTML += `<p>Status: ${data.status}</p>`;
+                output.innerHTML += `<p>Timestamp: ${data.timestamp}</p>`;
+                
+                // Now test CORS
+                return fetch(apiUrl + '/overview?ticker=AAPL&preset=6M&interval=1d');
+            })
+            .then(r => r.json())
+            .then(data => {
+                output.innerHTML += `<p class="ok">✓ CORS is working!</p>`;
+                output.innerHTML += `<p>Ticker: ${data.ticker}</p>`;
+                output.innerHTML += `<p>Latest Close: $${data.metrics.latest_close}</p>`;
+            })
+            .catch(err => {
+                output.innerHTML += `<p class="error">✗ Error: ${err.message}</p>`;
+                output.innerHTML += `<p>This might be a CORS issue</p>`;
+            });
+    </script>
+</body>
+</html>
