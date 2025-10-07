@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -644,7 +644,7 @@ app.add_middleware(
 @app.get("/health")
 def health_check() -> dict:
     """Simple health check endpoint."""
-    return {"status": "ok", "timestamp": datetime.now(UTC).isoformat()}
+    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
 @app.get("/health/forecast")
@@ -660,13 +660,13 @@ def health_forecast_check() -> dict:
             "tensorflow_version": tf.__version__,
             "yfinance_available": True,
             "sklearn_available": True,
-            "timestamp": datetime.now(UTC).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         return {
             "status": "error",
             "error": str(e),
-            "timestamp": datetime.now(UTC).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
 
