@@ -878,8 +878,9 @@ class _OverviewSection extends StatelessWidget {
 
     return LineChartData(
       lineTouchData: LineTouchData(
+        enabled: true,
         handleBuiltInTouches: true,
-        touchSpotThreshold: 18,
+        touchSpotThreshold: 50, // Increased from 18 to make touches easier to detect
         getTouchedSpotIndicator: (bar, indexes) {
           return indexes
               .map(
@@ -1151,8 +1152,9 @@ class _ForecastSection extends StatelessWidget {
 
     return LineChartData(
       lineTouchData: LineTouchData(
+        enabled: true,
         handleBuiltInTouches: true,
-        touchSpotThreshold: 18,
+        touchSpotThreshold: 50, // Increased from 18 to make touches easier to detect
         getTouchedSpotIndicator: (bar, indexes) {
           return indexes
               .map(
@@ -1195,8 +1197,9 @@ class _ForecastSection extends StatelessWidget {
               }
             }
 
-            historyValue ??= nearestValue(historyLookup, touchedX);
-            forecastValue ??= nearestValue(forecastLookup, touchedX);
+            // Fallback to nearestValue with more forgiving tolerance
+            historyValue ??= nearestValue(historyLookup, touchedX, tolerance: 86400000 * 3); // 3 days tolerance
+            forecastValue ??= nearestValue(forecastLookup, touchedX, tolerance: 86400000 * 3); // 3 days tolerance
 
             final children = <TextSpan>[];
             if (historyValue != null) {

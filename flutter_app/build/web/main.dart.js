@@ -38940,6 +38940,7 @@ $4$baseLine$interval$max$min(a,b,c,d){return this.G(this,A.H("call","$4$baseLine
 $2$lineBarsData$showingTooltipIndicators(a,b){return this.G(this,A.H("call","$2$lineBarsData$showingTooltipIndicators",0,[a,b],["lineBarsData","showingTooltipIndicators"],0))},
 $1$showingIndicators(a){return this.G(this,A.H("call","$1$showingIndicators",0,[a],["showingIndicators"],0))},
 $2$1(a,b,c){return this.G(this,A.H("call","$2$1",0,[a,b,c],[],2))},
+$3$tolerance(a,b,c){return this.G(this,A.H("call","$3$tolerance",0,[a,b,c],["tolerance"],0))},
 $1$selectable(a){return this.G(this,A.H("call","$1$selectable",0,[a],["selectable"],0))},
 $2$hitTest$paintOffset(a,b){return this.G(this,A.H("call","$2$hitTest$paintOffset",0,[a,b],["hitTest","paintOffset"],0))},
 $6$activeTrackColor$inactiveTrackColor$overlayShape$thumbColor$thumbShape$trackHeight(a,b,c,d,e,f){return this.G(this,A.H("call","$6$activeTrackColor$inactiveTrackColor$overlayShape$thumbColor$thumbShape$trackHeight",0,[a,b,c,d,e,f],["activeTrackColor","inactiveTrackColor","overlayShape","thumbColor","thumbShape","trackHeight"],0))},
@@ -39051,7 +39052,6 @@ $1$width(a){return this.G(this,A.H("call","$1$width",0,[a],["width"],0))},
 $2$from$to(a,b){return this.G(this,A.H("call","$2$from$to",0,[a,b],["from","to"],0))},
 $4$isScrolling$newPosition$oldPosition$velocity(a,b,c,d){return this.G(this,A.H("call","$4$isScrolling$newPosition$oldPosition$velocity",0,[a,b,c,d],["isScrolling","newPosition","oldPosition","velocity"],0))},
 $2$bottomNavigationBarTop$floatingActionButtonArea(a,b){return this.G(this,A.H("call","$2$bottomNavigationBarTop$floatingActionButtonArea",0,[a,b],["bottomNavigationBarTop","floatingActionButtonArea"],0))},
-$3$tolerance(a,b,c){return this.G(this,A.H("call","$3$tolerance",0,[a,b,c],["tolerance"],0))},
 QU(a){return this.G(this,A.H("_yieldStar","QU",0,[a],[],0))},
 ls(){return this.G(this,A.H("toJson","ls",0,[],[],0))},
 pT(){return this.G(this,A.H("didUnregisterListener","pT",0,[],[],0))},
@@ -85056,7 +85056,7 @@ k.toString
 k=A.d([a1,k],t.t_)
 j=A.d([],t.ij)
 for(i=a0.length,h=0;h<a0.length;a0.length===i||(0,A.F)(a0),++h){g=a0[h]
-j.push(new A.b8(g.a.a,g.b))}return A.KL(f,f,f,B.kJ,d,B.ji,B.kw,B.oO,A.d([A.mp(f,3,f,a1,0.35,f,B.d3,new A.eo(B.cv,B.cR,B.aR,k,f,f),!0,!1,!1,!1,B.d5,!1,10,B.dm,!0,B.cE,j)],t.HS),new A.pa(e,new A.an5(a1),18,A.awe(),!0,A.awg(),A.awf(),!0,f,f,f),f,f,f,f,B.lK,B.kK,new A.oH(!0,new A.i8(16,f,new A.iz(!0,new A.an6(o,m),48,l),!0),B.fV,B.fV,new A.i8(16,f,new A.iz(!0,new A.an7(q,p),32,c),!0)))}}
+j.push(new A.b8(g.a.a,g.b))}return A.KL(f,f,f,B.kJ,d,B.ji,B.kw,B.oO,A.d([A.mp(f,3,f,a1,0.35,f,B.d3,new A.eo(B.cv,B.cR,B.aR,k,f,f),!0,!1,!1,!1,B.d5,!1,10,B.dm,!0,B.cE,j)],t.HS),new A.pa(e,new A.an5(a1),50,A.awe(),!0,A.awg(),A.awf(),!0,f,f,f),f,f,f,f,B.lK,B.kK,new A.oH(!0,new A.i8(16,f,new A.iz(!0,new A.an6(o,m),48,l),!0),B.fV,B.fV,new A.i8(16,f,new A.iz(!0,new A.an7(q,p),32,c),!0)))}}
 A.an8.prototype={
 $2(a,b){var s,r,q,p,o,n,m=this,l=null,k=m.b,j=m.c,i=k.e3(j.a),h=j.b,g=m.a,f=g.d
 i=A.o3(f,B.Jy,h>=0,B.d.a5(h,2)+"% vs previous close","Latest close",i)
@@ -85218,7 +85218,7 @@ a7.push(A.mp(a4,2,a4,B.a2G,0.35,a4,B.d3,a4,!0,!1,!1,!1,B.d5,!1,10,B.dm,!0,B.cE,a
 a6.toString
 p=A.Q(a6).i("R<1,b8>")
 a6=A.P(new A.R(a6,new A.akL(),p),p.i("ab.E"))
-a7.push(A.mp(a4,2,a4,B.xc,0.35,a4,B.d3,a4,!0,!1,!1,!1,B.d5,!1,10,B.dm,!0,B.cE,a6))}return A.KL(a4,a4,a4,B.kJ,m,B.ji,B.kw,B.oO,a7,new A.pa(a5,new A.akM(),18,A.awe(),!0,A.awg(),A.awf(),!0,a4,a4,a4),k,r,l,q,B.lK,B.kK,new A.oH(!0,new A.i8(16,a4,new A.iz(!0,new A.akN(d,b),48,a),!0),B.fV,B.fV,new A.i8(16,a4,new A.iz(!0,new A.akO(g,f),32,a1),!0)))}}
+a7.push(A.mp(a4,2,a4,B.xc,0.35,a4,B.d3,a4,!0,!1,!1,!1,B.d5,!1,10,B.dm,!0,B.cE,a6))}return A.KL(a4,a4,a4,B.kJ,m,B.ji,B.kw,B.oO,a7,new A.pa(a5,new A.akM(),50,A.awe(),!0,A.awg(),A.awf(),!0,a4,a4,a4),k,r,l,q,B.lK,B.kK,new A.oH(!0,new A.i8(16,a4,new A.iz(!0,new A.akN(d,b),48,a),!0),B.fV,B.fV,new A.i8(16,a4,new A.iz(!0,new A.akO(g,f),32,a1),!0)))}}
 A.akH.prototype={
 $1(a){return new A.b8(a.a.a,a.b)},
 $S:536}
@@ -85279,8 +85279,8 @@ r=A.ot(B.d.cz(s),0,!1)
 for(j=j.gZ(a),q=k,p=q;j.v();){o=j.gK()
 n=o.d
 if(n===0)p=o.b
-else if(n===1)q=o.b}if(p==null)p=l.a.$2(l.b,s)
-if(q==null)q=l.a.$2(l.c,s)
+else if(n===1)q=o.b}if(p==null)p=l.a.$3$tolerance(l.b,s,2592e5)
+if(q==null)q=l.a.$3$tolerance(l.c,s,2592e5)
 m=A.d([],t.Ne)
 if(p!=null){j=l.d.e3(p)
 m.push(A.cB(k,k,A.fg(k,k,l.e,k,k,k,k,k,k,k,k,13,k,k,B.bV,k,1.3,!0,k,k,k,k,k,k,k,k),"Actual: "+j+"\n"))}if(q!=null){j=l.d.e3(q)
