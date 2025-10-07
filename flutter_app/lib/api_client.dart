@@ -46,7 +46,7 @@ class ApiClient {
         'start_date': startDate,
         'end_date': endDate,
       }),
-    );
+    ).timeout(const Duration(seconds: 30));
     _ensureSuccess(response);
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return OverviewResponse.fromJson(data);
@@ -79,7 +79,7 @@ class ApiClient {
         'ema_12': ema12,
         'ema_26': ema26,
       }),
-    );
+    ).timeout(const Duration(seconds: 30));
     _ensureSuccess(response);
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return ForecastResponse.fromJson(data);
@@ -91,7 +91,7 @@ class ApiClient {
         'ticker': ticker,
         'limit': limit,
       }),
-    );
+    ).timeout(const Duration(seconds: 30));
     if (response.statusCode == 503 || response.statusCode == 404) {
       return null;
     }
