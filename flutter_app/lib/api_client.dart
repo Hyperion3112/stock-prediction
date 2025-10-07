@@ -7,7 +7,7 @@ import 'models.dart';
 class ApiClient {
   ApiClient({http.Client? httpClient, String? baseUrl})
       : _client = httpClient ?? http.Client(),
-        baseUrl = (baseUrl ?? const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8000'))
+        baseUrl = (baseUrl ?? const String.fromEnvironment('API_BASE_URL', defaultValue: 'https://stock-backend-nt1s.onrender.com'))
             .replaceAll(RegExp(r'/+$'), '');
 
   final http.Client _client;

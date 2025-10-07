@@ -12,6 +12,9 @@
     <script>
       var serviceWorkerVersion = null;
       window._flutter = window._flutter || {};
+      
+      // Set API base URL for production
+      window.API_BASE_URL = 'https://stock-backend-nt1s.onrender.com';
 
       (function disableServiceWorkers() {
         if (!('serviceWorker' in navigator)) {
