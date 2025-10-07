@@ -118,6 +118,55 @@ class ForecastPoint {
   final double value;
 }
 
+class TechnicalIndicator {
+  TechnicalIndicator({required this.date, required this.value});
+
+  factory TechnicalIndicator.fromJson(Map<String, dynamic> json) => TechnicalIndicator(
+        date: _parseDateTime(json['date']),
+        value: (json['value'] as num).toDouble(),
+      );
+
+  final DateTime date;
+  final double value;
+}
+
+class TechnicalIndicators {
+  TechnicalIndicators({
+    this.sma20,
+    this.sma50,
+    this.ema12,
+    this.ema26,
+  });
+
+  factory TechnicalIndicators.fromJson(Map<String, dynamic> json) => TechnicalIndicators(
+        sma20: json['sma_20'] == null
+            ? null
+            : (json['sma_20'] as List<dynamic>)
+                .map((item) => TechnicalIndicator.fromJson(item as Map<String, dynamic>))
+                .toList(),
+        sma50: json['sma_50'] == null
+            ? null
+            : (json['sma_50'] as List<dynamic>)
+                .map((item) => TechnicalIndicator.fromJson(item as Map<String, dynamic>))
+                .toList(),
+        ema12: json['ema_12'] == null
+            ? null
+            : (json['ema_12'] as List<dynamic>)
+                .map((item) => TechnicalIndicator.fromJson(item as Map<String, dynamic>))
+                .toList(),
+        ema26: json['ema_26'] == null
+            ? null
+            : (json['ema_26'] as List<dynamic>)
+                .map((item) => TechnicalIndicator.fromJson(item as Map<String, dynamic>))
+                .toList(),
+      );
+
+  final List<TechnicalIndicator>? sma20;
+  final List<TechnicalIndicator>? sma50;
+  final List<TechnicalIndicator>? ema12;
+  final List<TechnicalIndicator>? ema26;
+}
+
 class OverviewResponse {
   OverviewResponse({
     required this.ticker,
@@ -150,6 +199,7 @@ class ForecastResponse {
     required this.source,
     required this.forecast,
     required this.history,
+    this.indicators,
     this.note,
   });
 
@@ -162,6 +212,9 @@ class ForecastResponse {
         history: (json['history'] as List<dynamic>)
             .map((item) => PricePoint.fromJson(item as Map<String, dynamic>))
             .toList(),
+        indicators: json['indicators'] == null
+            ? null
+            : TechnicalIndicators.fromJson(json['indicators'] as Map<String, dynamic>),
         note: json['note'] as String?,
       );
 
@@ -169,6 +222,7 @@ class ForecastResponse {
   final String source;
   final List<ForecastPoint> forecast;
   final List<PricePoint> history;
+  final TechnicalIndicators? indicators;
   final String? note;
 }
 

@@ -60,6 +60,10 @@ class ApiClient {
     String? startDate,
     String? endDate,
     int? window,
+    bool sma20 = false,
+    bool sma50 = false,
+    bool ema12 = false,
+    bool ema26 = false,
   }) async {
     final response = await _client.get(
       _buildUri('/forecast', {
@@ -70,6 +74,10 @@ class ApiClient {
         'start_date': startDate,
         'end_date': endDate,
         'window': window,
+        'sma_20': sma20,
+        'sma_50': sma50,
+        'ema_12': ema12,
+        'ema_26': ema26,
       }),
     );
     _ensureSuccess(response);

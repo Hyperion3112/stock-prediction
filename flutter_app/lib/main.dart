@@ -112,6 +112,10 @@ class DashboardParams {
     required this.preset,
     required this.days,
     required this.includeSentiment,
+    this.sma20 = false,
+    this.sma50 = false,
+    this.ema12 = false,
+    this.ema26 = false,
   });
 
   final String ticker;
@@ -119,6 +123,10 @@ class DashboardParams {
   final String preset;
   final int days;
   final bool includeSentiment;
+  final bool sma20;
+  final bool sma50;
+  final bool ema12;
+  final bool ema26;
 
   DashboardParams copyWith({
     String? ticker,
@@ -126,6 +134,10 @@ class DashboardParams {
     String? preset,
     int? days,
     bool? includeSentiment,
+    bool? sma20,
+    bool? sma50,
+    bool? ema12,
+    bool? ema26,
   }) {
     return DashboardParams(
       ticker: ticker ?? this.ticker,
@@ -133,6 +145,10 @@ class DashboardParams {
       preset: preset ?? this.preset,
       days: days ?? this.days,
       includeSentiment: includeSentiment ?? this.includeSentiment,
+      sma20: sma20 ?? this.sma20,
+      sma50: sma50 ?? this.sma50,
+      ema12: ema12 ?? this.ema12,
+      ema26: ema26 ?? this.ema26,
     );
   }
 }
@@ -264,6 +280,10 @@ class DashboardController extends ChangeNotifier {
         days: params.days,
         interval: params.interval,
         useLstm: true,
+        sma20: params.sma20,
+        sma50: params.sma50,
+        ema12: params.ema12,
+        ema26: params.ema26,
       );
       SentimentResponse? sentiment;
       if (params.includeSentiment) {
@@ -303,6 +323,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String interval = '1d';
   int horizon = 30;
   bool includeSentiment = true;
+  bool showSma20 = false;
+  bool showSma50 = false;
+  bool showEma12 = false;
+  bool showEma26 = false;
 
   @override
   void initState() {
@@ -584,6 +608,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           selected: includeSentiment,
                           onSelected: (value) => setState(() => includeSentiment = value),
                         ),
+                        FilterChip(
+                          showCheckmark: false,
+                          label: const Text('SMA-20'),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          selectedColor: accentColor.withAlphaFraction(0.25),
+                          backgroundColor: Colors.white.withAlphaFraction(0.05),
+                          side: BorderSide(color: (showSma20 ? accentColor : Colors.white24).withAlphaFraction(0.7)),
+                          selected: showSma20,
+                          onSelected: (value) => setState(() => showSma20 = value),
+                        ),
+                        FilterChip(
+                          showCheckmark: false,
+                          label: const Text('SMA-50'),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          selectedColor: accentColor.withAlphaFraction(0.25),
+                          backgroundColor: Colors.white.withAlphaFraction(0.05),
+                          side: BorderSide(color: (showSma50 ? accentColor : Colors.white24).withAlphaFraction(0.7)),
+                          selected: showSma50,
+                          onSelected: (value) => setState(() => showSma50 = value),
+                        ),
+                        FilterChip(
+                          showCheckmark: false,
+                          label: const Text('EMA-12'),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          selectedColor: accentColor.withAlphaFraction(0.25),
+                          backgroundColor: Colors.white.withAlphaFraction(0.05),
+                          side: BorderSide(color: (showEma12 ? accentColor : Colors.white24).withAlphaFraction(0.7)),
+                          selected: showEma12,
+                          onSelected: (value) => setState(() => showEma12 = value),
+                        ),
+                        FilterChip(
+                          showCheckmark: false,
+                          label: const Text('EMA-26'),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          selectedColor: accentColor.withAlphaFraction(0.25),
+                          backgroundColor: Colors.white.withAlphaFraction(0.05),
+                          side: BorderSide(color: (showEma26 ? accentColor : Colors.white24).withAlphaFraction(0.7)),
+                          selected: showEma26,
+                          onSelected: (value) => setState(() => showEma26 = value),
+                        ),
                       ],
                     ),
                   ),
@@ -603,6 +667,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               interval: interval,
                               days: horizon,
                               includeSentiment: includeSentiment,
+                              sma20: showSma20,
+                              sma50: showSma50,
+                              ema12: showEma12,
+                              ema26: showEma26,
                             );
                             controller.updateParams(params);
                             scheduleMicrotask(() => controller.loadData());
@@ -999,7 +1067,7 @@ class _ForecastSection extends StatelessWidget {
                   ? const _EmptyChartState(message: 'Forecast data not available yet')
                   : LineChart(
                       key: ValueKey('forecast-${forecast.ticker}-${forecast.forecast.length}-${history.length}'),
-                      _buildForecastChart(history, forecast.forecast, accentColor, modelColor),
+                      _buildForecastChart(history, forecast.forecast, forecast.indicators, accentColor, modelColor),
                     ),
             ),
           ),
@@ -1011,6 +1079,7 @@ class _ForecastSection extends StatelessWidget {
   LineChartData _buildForecastChart(
     List<PricePoint> history,
     List<ForecastPoint> forecastPoints,
+    TechnicalIndicators? indicators,
     Color accent,
     Color modelColor,
   ) {
@@ -1041,6 +1110,19 @@ class _ForecastSection extends StatelessWidget {
     }
 
     final allValues = [...baseData, ...forecastData];
+    // Include indicator values in min/max calculations
+    if (indicators?.sma20 != null) {
+      allValues.addAll(indicators!.sma20!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
+    }
+    if (indicators?.sma50 != null) {
+      allValues.addAll(indicators!.sma50!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
+    }
+    if (indicators?.ema12 != null) {
+      allValues.addAll(indicators!.ema12!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
+    }
+    if (indicators?.ema26 != null) {
+      allValues.addAll(indicators!.ema26!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
+    }
     if (allValues.isEmpty) {
       return LineChartData(lineBarsData: []);
     }
@@ -1213,6 +1295,39 @@ class _ForecastSection extends StatelessWidget {
           dashArray: const [6, 4],
           dotData: const FlDotData(show: false),
         ),
+        // Add technical indicator lines
+        if (indicators?.sma20 != null)
+          LineChartBarData(
+            spots: indicators!.sma20!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)).toList(),
+            isCurved: true,
+            color: Colors.orange,
+            barWidth: 2,
+            dotData: const FlDotData(show: false),
+          ),
+        if (indicators?.sma50 != null)
+          LineChartBarData(
+            spots: indicators!.sma50!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)).toList(),
+            isCurved: true,
+            color: Colors.purple,
+            barWidth: 2,
+            dotData: const FlDotData(show: false),
+          ),
+        if (indicators?.ema12 != null)
+          LineChartBarData(
+            spots: indicators!.ema12!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)).toList(),
+            isCurved: true,
+            color: Colors.green,
+            barWidth: 2,
+            dotData: const FlDotData(show: false),
+          ),
+        if (indicators?.ema26 != null)
+          LineChartBarData(
+            spots: indicators!.ema26!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)).toList(),
+            isCurved: true,
+            color: Colors.cyan,
+            barWidth: 2,
+            dotData: const FlDotData(show: false),
+          ),
       ],
     );
   }
