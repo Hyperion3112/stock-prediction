@@ -138,11 +138,26 @@ class ForecastPoint(BaseModel):
     value: float
 
 
+class TechnicalIndicator(BaseModel):
+    """Technical indicator data point."""
+    date: datetime
+    value: float
+
+
+class TechnicalIndicators(BaseModel):
+    """Container for all technical indicators."""
+    sma_20: Optional[list[TechnicalIndicator]] = None
+    sma_50: Optional[list[TechnicalIndicator]] = None
+    ema_12: Optional[list[TechnicalIndicator]] = None
+    ema_26: Optional[list[TechnicalIndicator]] = None
+
+
 class ForecastResponse(BaseModel):
     ticker: str
     source: str
     forecast: list[ForecastPoint]
     history: list[PricePoint]
+    indicators: Optional[TechnicalIndicators] = None
     note: Optional[str] = None
 
 
@@ -267,6 +282,54 @@ def load_data(
     return df
 
 
+def calculate_technical_indicators(
+    data: pd.DataFrame,
+    sma_20: bool = False,
+    sma_50: bool = False,
+    ema_12: bool = False,
+    ema_26: bool = False,
+) -> TechnicalIndicators:
+    """Calculate technical indicators for price data."""
+    if data is None or data.empty:
+        return TechnicalIndicators()
+    
+    indicators = TechnicalIndicators()
+    
+    if sma_20:
+        sma_20_values = data["Close"].rolling(window=20).mean()
+        indicators.sma_20 = [
+            TechnicalIndicator(date=row["Date"], value=float(val))
+            for _, row in data.iterrows()
+            if (val := sma_20_values.iloc[_]) and not pd.isna(val)
+        ]
+    
+    if sma_50:
+        sma_50_values = data["Close"].rolling(window=50).mean()
+        indicators.sma_50 = [
+            TechnicalIndicator(date=row["Date"], value=float(val))
+            for _, row in data.iterrows()
+            if (val := sma_50_values.iloc[_]) and not pd.isna(val)
+        ]
+    
+    if ema_12:
+        ema_12_values = data["Close"].ewm(span=12, adjust=False).mean()
+        indicators.ema_12 = [
+            TechnicalIndicator(date=row["Date"], value=float(val))
+            for _, row in data.iterrows()
+            if (val := ema_12_values.iloc[_]) and not pd.isna(val)
+        ]
+    
+    if ema_26:
+        ema_26_values = data["Close"].ewm(span=26, adjust=False).mean()
+        indicators.ema_26 = [
+            TechnicalIndicator(date=row["Date"], value=float(val))
+            for _, row in data.iterrows()
+            if (val := ema_26_values.iloc[_]) and not pd.isna(val)
+        ]
+    
+    return indicators
+
+
 def fetch_company_metadata(ticker: str) -> dict[str, Optional[str]]:  # pragma: no cover - network heavy
     ticker_clean = ticker.strip().upper()
     try:
@@ -280,6 +343,55 @@ def fetch_company_metadata(ticker: str) -> dict[str, Optional[str]]:  # pragma: 
         "industry": info.get("industry"),
         "website": info.get("website"),
     }
+
+
+def calculate_technical_indicators(
+    data: pd.DataFrame,
+    sma_20: bool = False,
+    sma_50: bool = False,
+    ema_12: bool = False,
+    ema_26: bool = False,
+) -> TechnicalIndicators:
+    """Calculate requested technical indicators from price data."""
+    indicators = TechnicalIndicators()
+    
+    if sma_20 and len(data) >= 20:
+        sma = data['Close'].rolling(window=20).mean()
+        indicators.sma_20 = [
+            TechnicalIndicator(date=row['Date'], value=float(val))
+            for _, row in data.iterrows()
+            for val in [sma.iloc[_]]
+            if pd.notna(val)
+        ]
+    
+    if sma_50 and len(data) >= 50:
+        sma = data['Close'].rolling(window=50).mean()
+        indicators.sma_50 = [
+            TechnicalIndicator(date=row['Date'], value=float(val))
+            for _, row in data.iterrows()
+            for val in [sma.iloc[_]]
+            if pd.notna(val)
+        ]
+    
+    if ema_12 and len(data) >= 12:
+        ema = data['Close'].ewm(span=12, adjust=False).mean()
+        indicators.ema_12 = [
+            TechnicalIndicator(date=row['Date'], value=float(val))
+            for _, row in data.iterrows()
+            for val in [ema.iloc[_]]
+            if pd.notna(val)
+        ]
+    
+    if ema_26 and len(data) >= 26:
+        ema = data['Close'].ewm(span=26, adjust=False).mean()
+        indicators.ema_26 = [
+            TechnicalIndicator(date=row['Date'], value=float(val))
+            for _, row in data.iterrows()
+            for val in [ema.iloc[_]]
+            if pd.notna(val)
+        ]
+    
+    return indicators
 
 
 def forecast_linear(data: pd.DataFrame, days: int = 30) -> pd.DataFrame:
@@ -697,6 +809,10 @@ def get_forecast(
     end_date: Optional[str] = Query(None),
     use_lstm: bool = Query(True, description="Whether to require an LSTM forecast"),
     window: int = Query(20, ge=5, le=120, description="Rolling window for LSTM inputs"),
+    sma_20: bool = Query(False, description="Include 20-period Simple Moving Average"),
+    sma_50: bool = Query(False, description="Include 50-period Simple Moving Average"),
+    ema_12: bool = Query(False, description="Include 12-period Exponential Moving Average"),
+    ema_26: bool = Query(False, description="Include 26-period Exponential Moving Average"),
 ) -> ForecastResponse:
     try:
         start = _parse_iso_date(start_date)
@@ -759,12 +875,18 @@ def get_forecast(
 
     history = _serialize_history(data, limit=max(days, 120))
     forecast_points = _serialize_forecast(forecast_df)
+    
+    # Calculate technical indicators if requested
+    indicators = None
+    if any([sma_20, sma_50, ema_12, ema_26]):
+        indicators = calculate_technical_indicators(data, sma_20, sma_50, ema_12, ema_26)
 
     return ForecastResponse(
         ticker=ticker_clean,
         source=source,
         forecast=forecast_points,
         history=history,
+        indicators=indicators,
         note=note,
     )
 
