@@ -1,0 +1,15 @@
+{
+  "buildCommand": "echo 'Using pre-built files'",
+  "outputDirectory": "build/web",
+  "installCommand": "echo 'No install needed'",
+  "framework": null,
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
