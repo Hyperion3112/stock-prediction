@@ -642,8 +642,32 @@ app.add_middleware(
 
 
 @app.get("/health")
-def healthcheck() -> dict[str, str]:
-    return {"status": "ok", "timestamp": datetime.utcnow().isoformat(timespec="seconds")}
+def health_check() -> dict:
+    """Simple health check endpoint."""
+    return {"status": "ok", "timestamp": datetime.now(UTC).isoformat()}
+
+
+@app.get("/health/forecast")
+def health_forecast_check() -> dict:
+    """Health check for forecast dependencies."""
+    try:
+        import tensorflow as tf
+        import yfinance as yf
+        from sklearn.preprocessing import MinMaxScaler
+        
+        return {
+            "status": "ok",
+            "tensorflow_version": tf.__version__,
+            "yfinance_available": True,
+            "sklearn_available": True,
+            "timestamp": datetime.now(UTC).isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now(UTC).isoformat()
+        }
 
 
 @app.get("/overview", response_model=OverviewResponse)
@@ -697,17 +721,35 @@ def get_forecast(
     use_lstm: bool = Query(True, description="Whether to require an LSTM forecast"),
     window: int = Query(20, ge=5, le=120, description="Rolling window for LSTM inputs"),
 ) -> ForecastResponse:
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    
     try:
+        logger.info(f"Forecast request: ticker={ticker}, days={days}, interval={interval}, use_lstm={use_lstm}")
+        
         start = _parse_iso_date(start_date)
         end = _parse_iso_date(end_date)
         default_days = max(days * 3, 180)
         start, end = _resolve_date_range(start, end, default_days)
+        
+        logger.info(f"Date range resolved: start={start}, end={end}")
     except ValueError as exc:
+        logger.error(f"Date parsing error: {exc}")
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    data = load_data(ticker, start, end, interval)
-    if data is None or data.empty:
-        raise HTTPException(status_code=404, detail="No price data available for the requested configuration.")
+    try:
+        logger.info(f"Loading data for {ticker}")
+        data = load_data(ticker, start, end, interval)
+        if data is None or data.empty:
+            logger.warning(f"No data available for {ticker}")
+            raise HTTPException(status_code=404, detail="No price data available for the requested configuration.")
+        logger.info(f"Data loaded: {len(data)} rows")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error loading data: {e}")
+        raise HTTPException(status_code=500, detail=f"Error loading data: {str(e)}") from e
 
     ticker_clean = ticker.strip().upper()
     model_catalog = list_available_models()
