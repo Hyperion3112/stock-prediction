@@ -7,10 +7,63 @@
     <meta name="description" content="AI Stock Insights Flutter web client" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Stock Insights</title>
+  <link rel="icon" href="./icons/Icon-192.png" type="image/png" />
     <link rel="manifest" href="manifest.json" />
     <script>
       var serviceWorkerVersion = null;
       window._flutter = window._flutter || {};
+
+      (function disableServiceWorkers() {
+        if (!('serviceWorker' in navigator)) {
+          return;
+        }
+
+        navigator.serviceWorker
+          .getRegistrations()
+          .then(function (registrations) {
+            registrations.forEach(function (registration) {
+              if (registration.scope && registration.scope.startsWith(window.location.origin)) {
+                registration.unregister().catch(function (err) {
+                  console.warn('Service worker unregister failed:', err);
+                });
+              }
+            });
+          })
+          .catch(function (err) {
+            console.warn('Service worker lookup failed:', err);
+          });
+
+        var dummyWorker = {
+          scriptURL: '',
+          state: 'activated',
+          postMessage: function () {},
+          addEventListener: function () {},
+          removeEventListener: function () {},
+        };
+
+        var noopRegistration = {
+          scope: window.location.origin + '/',
+          installing: dummyWorker,
+          waiting: dummyWorker,
+          active: dummyWorker,
+          update: function () {
+            return Promise.resolve();
+          },
+          unregister: function () {
+            return Promise.resolve(true);
+          },
+        };
+
+        var originalRegister = navigator.serviceWorker.register;
+        navigator.serviceWorker.register = function () {
+          console.info('Flutter service worker registration disabled for web build.');
+          return Promise.resolve(noopRegistration);
+        };
+
+        if (originalRegister && originalRegister !== navigator.serviceWorker.register) {
+          navigator.serviceWorker.register._originalRegister = originalRegister;
+        }
+      })();
     </script>
     <script src="flutter.js" defer></script>
     <style>
@@ -40,6 +93,10 @@
           .loadEntrypoint({
             serviceWorker: {
               serviceWorkerVersion: serviceWorkerVersion,
+              register: function () {
+                console.info('Flutter service worker registration bypassed.');
+                return Promise.resolve(noopRegistration);
+              },
             },
           })
           .then(function (engineInitializer) {
