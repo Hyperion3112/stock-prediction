@@ -11,7 +11,8 @@ import 'api_client.dart';
 import 'models.dart';
 
 extension _ColorAlpha on Color {
-  Color withAlphaFraction(double opacity) => withValues(alpha: opacity.clamp(0, 1));
+  Color withAlphaFraction(double opacity) =>
+      withValues(alpha: opacity.clamp(0, 1));
 }
 
 String _formatAxisTick(double value) {
@@ -34,7 +35,8 @@ String _formatAxisTick(double value) {
   return value.toStringAsFixed(3);
 }
 
-List<double> _generateAxisTicks(double min, double max, {int desiredCount = 4}) {
+List<double> _generateAxisTicks(double min, double max,
+    {int desiredCount = 4}) {
   if (!min.isFinite || !max.isFinite || desiredCount <= 1) {
     return [min];
   }
@@ -90,7 +92,9 @@ class StockInsightsApp extends StatelessWidget {
         ),
         fontFamily: 'Inter',
         scaffoldBackgroundColor: Colors.transparent,
-        textTheme: Theme.of(context).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+        textTheme: Theme.of(context)
+            .textTheme
+            .apply(bodyColor: Colors.white, displayColor: Colors.white),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -172,8 +176,8 @@ class DashboardState {
   final bool isLoading;
   final String? errorMessage;
 
-  bool get hasSavedLstmForTicker =>
-      models.any((model) => model.ticker.toUpperCase() == params.ticker.toUpperCase());
+  bool get hasSavedLstmForTicker => models.any(
+      (model) => model.ticker.toUpperCase() == params.ticker.toUpperCase());
 
   DashboardState copyWith({
     DashboardParams? params,
@@ -184,8 +188,9 @@ class DashboardState {
     bool? isLoading,
     Object? errorMessage = _sentinel,
   }) {
-    final String? resolvedErrorMessage =
-        identical(errorMessage, _sentinel) ? this.errorMessage : errorMessage as String?;
+    final String? resolvedErrorMessage = identical(errorMessage, _sentinel)
+        ? this.errorMessage
+        : errorMessage as String?;
 
     return DashboardState(
       params: params ?? this.params,
@@ -287,7 +292,13 @@ class DashboardController extends ChangeNotifier {
       );
       SentimentResponse? sentiment;
       if (params.includeSentiment) {
-        sentiment = await _client.fetchSentiment(ticker: params.ticker);
+        try {
+          sentiment = await _client.fetchSentiment(ticker: params.ticker);
+          print('DEBUG: Sentiment loaded for ${params.ticker}: ${sentiment?.summary.total ?? 0} articles');
+        } catch (e) {
+          print('DEBUG: Failed to load sentiment for ${params.ticker}: $e');
+          sentiment = null;
+        }
       }
 
       _state = _state.copyWith(
@@ -298,7 +309,8 @@ class DashboardController extends ChangeNotifier {
         errorMessage: null,
       );
     } catch (err) {
-      _state = _state.copyWith(isLoading: false, errorMessage: _formatErrorMessage(err));
+      _state = _state.copyWith(
+          isLoading: false, errorMessage: _formatErrorMessage(err));
     }
     notifyListeners();
   }
@@ -360,7 +372,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _AnimatedGradientBackground(accentColor: accent),
               SafeArea(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 12, 20, max(insets.bottom, 16)),
+                  padding:
+                      EdgeInsets.fromLTRB(20, 12, 20, max(insets.bottom, 16)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -389,18 +402,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             if (state.errorMessage != null)
                               SliverToBoxAdapter(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
                                   child: GlassContainer(
                                     padding: const EdgeInsets.all(16),
                                     child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent),
+                                        const Icon(Icons.warning_amber_rounded,
+                                            color: Colors.orangeAccent),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
                                             state.errorMessage!,
-                                            style: const TextStyle(color: Colors.orangeAccent),
+                                            style: const TextStyle(
+                                                color: Colors.orangeAccent),
                                           ),
                                         ),
                                       ],
@@ -413,11 +430,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 duration: const Duration(milliseconds: 500),
                                 transitionBuilder: _sectionTransitionBuilder,
                                 child: state.overview == null
-                                    ? (state.isLoading 
+                                    ? (state.isLoading
                                         ? const _OverviewLoadingSkeleton()
                                         : const SizedBox.shrink())
                                     : _OverviewSection(
-                                        key: ValueKey('overview-${state.overview!.metadata.ticker}-${state.overview!.metrics.latestClose}'),
+                                        key: ValueKey(
+                                            'overview-${state.overview!.metadata.ticker}-${state.overview!.metrics.latestClose}'),
                                         overview: state.overview!,
                                         accentColor: accent,
                                       ),
@@ -428,11 +446,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 duration: const Duration(milliseconds: 500),
                                 transitionBuilder: _sectionTransitionBuilder,
                                 child: state.forecast == null
-                                    ? (state.isLoading 
+                                    ? (state.isLoading
                                         ? const _ForecastLoadingSkeleton()
                                         : const SizedBox.shrink())
                                     : _ForecastSection(
-                                        key: ValueKey('forecast-${state.forecast!.ticker}-${state.forecast!.forecast.length}'),
+                                        key: ValueKey(
+                                            'forecast-${state.forecast!.ticker}-${state.forecast!.forecast.length}'),
                                         forecast: state.forecast!,
                                         overview: state.overview,
                                         accentColor: accent,
@@ -446,13 +465,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 child: state.sentiment == null
                                     ? const SizedBox.shrink()
                                     : _SentimentSection(
-                                        key: ValueKey('sentiment-${state.sentiment!.ticker}-${state.sentiment!.summary.total}'),
+                                        key: ValueKey(
+                                            'sentiment-${state.sentiment!.ticker}-${state.sentiment!.summary.total}'),
                                         sentiment: state.sentiment!,
                                         accentColor: accent,
                                       ),
                               ),
                             ),
-                            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                            const SliverToBoxAdapter(
+                                child: SizedBox(height: 24)),
                           ],
                         ),
                       ),
@@ -467,26 +488,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  static Widget _sectionTransitionBuilder(Widget child, Animation<double> animation) {
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+  static Widget _sectionTransitionBuilder(
+      Widget child, Animation<double> animation) {
+    final curved =
+        CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero).animate(curved),
+        position: Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero)
+            .animate(curved),
         child: child,
       ),
     );
   }
 
   Color _tickerAccentColor(String ticker) {
-    final normalized = ticker.isEmpty ? 0 : ticker.codeUnitAt(0) + ticker.codeUnitAt(ticker.length - 1);
-    final hue = (normalized * 17) % 360;
-    return HSLColor.fromAHSL(1, hue.toDouble(), 0.55, 0.55).toColor();
+    final normalized = ticker.isEmpty
+        ? 0
+        : ticker.codeUnitAt(0) + ticker.codeUnitAt(ticker.length - 1);
+    // Use a more restricted hue range for better visual appeal
+    // Map to green-to-purple range (120-280 degrees) avoiding blues
+    final baseHue = (normalized * 17) % 160;
+    final hue = baseHue + 120.0; // Range: 120-280 (green through purple)
+    return HSLColor.fromAHSL(1, hue, 0.6, 0.58).toColor();
   }
 
-  Widget _buildControls(BuildContext context, DashboardState state, Color accentColor) {
-  const availablePresets = ['1M', '3M', '6M', '1Y', '2Y', '5Y'];
-  const availableIntervals = ['1d', '1wk', '1mo', '1h', '30m'];
+  Widget _buildControls(
+      BuildContext context, DashboardState state, Color accentColor) {
+    const availablePresets = ['1M', '3M', '6M', '1Y', '2Y', '5Y'];
+    const availableIntervals = ['1m', '5m', '15m', '30m', '1h', '1d', '1wk', '1mo'];
     return GlassContainer(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -501,10 +531,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Text(
                     'Configure analysis',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600, color: Colors.white),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600, color: Colors.white),
                   ),
                   const Spacer(),
                   AnimatedOpacity(
@@ -512,7 +540,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     opacity: state.isLoading ? 0.6 : 1,
                     child: Text(
                       'Ticker ${state.params.ticker}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                   ),
                 ],
@@ -537,14 +566,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: DropdownButtonFormField<String>(
                       key: ValueKey('preset-$preset'),
                       initialValue: preset,
-                      icon: const Icon(Icons.expand_more, color: Colors.white70),
+                      icon:
+                          const Icon(Icons.expand_more, color: Colors.white70),
                       dropdownColor: const Color(0xff111c2d),
                       decoration: _glassFieldDecoration('Date range'),
                       items: [
                         for (final item in availablePresets)
                           DropdownMenuItem(value: item, child: Text(item)),
                       ],
-                      onChanged: (value) => setState(() => preset = value ?? preset),
+                      onChanged: (value) =>
+                          setState(() => preset = value ?? preset),
                     ),
                   ),
                   SizedBox(
@@ -552,14 +583,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: DropdownButtonFormField<String>(
                       key: ValueKey('interval-$interval'),
                       initialValue: interval,
-                      icon: const Icon(Icons.expand_more, color: Colors.white70),
+                      icon:
+                          const Icon(Icons.expand_more, color: Colors.white70),
                       dropdownColor: const Color(0xff111c2d),
                       decoration: _glassFieldDecoration('Interval'),
                       items: [
                         for (final item in availableIntervals)
                           DropdownMenuItem(value: item, child: Text(item)),
                       ],
-                      onChanged: (value) => setState(() => interval = value ?? interval),
+                      onChanged: (value) =>
+                          setState(() => interval = value ?? interval),
                     ),
                   ),
                   SizedBox(
@@ -570,15 +603,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Forecast horizon', style: TextStyle(color: Colors.white70)),
-                            Text('$horizon days', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                            const Text('Forecast horizon',
+                                style: TextStyle(color: Colors.white70)),
+                            Text('$horizon days',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             trackHeight: 4,
-                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                            thumbShape: const RoundSliderThumbShape(
+                                enabledThumbRadius: 10),
                             overlayShape: SliderComponentShape.noOverlay,
                             activeTrackColor: accentColor,
                             inactiveTrackColor: Colors.white24,
@@ -589,7 +627,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             max: 90,
                             divisions: 12,
                             value: horizon.toDouble(),
-                            onChanged: (value) => setState(() => horizon = value.round()),
+                            onChanged: (value) =>
+                                setState(() => horizon = value.round()),
                           ),
                         ),
                       ],
@@ -608,9 +647,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           labelStyle: const TextStyle(color: Colors.white),
                           selectedColor: accentColor.withAlphaFraction(0.25),
                           backgroundColor: Colors.white.withAlphaFraction(0.05),
-                          side: BorderSide(color: (includeSentiment ? accentColor : Colors.white24).withAlphaFraction(0.7)),
+                          side: BorderSide(
+                              color: (includeSentiment
+                                      ? accentColor
+                                      : Colors.white24)
+                                  .withAlphaFraction(0.7)),
                           selected: includeSentiment,
-                          onSelected: (value) => setState(() => includeSentiment = value),
+                          onSelected: (value) =>
+                              setState(() => includeSentiment = value),
                         ),
                         FilterChip(
                           showCheckmark: false,
@@ -618,9 +662,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           labelStyle: const TextStyle(color: Colors.white),
                           selectedColor: accentColor.withAlphaFraction(0.25),
                           backgroundColor: Colors.white.withAlphaFraction(0.05),
-                          side: BorderSide(color: (showSma20 ? accentColor : Colors.white24).withAlphaFraction(0.7)),
+                          side: BorderSide(
+                              color: (showSma20 ? accentColor : Colors.white24)
+                                  .withAlphaFraction(0.7)),
                           selected: showSma20,
-                          onSelected: (value) => setState(() => showSma20 = value),
+                          onSelected: (value) =>
+                              setState(() => showSma20 = value),
                         ),
                         FilterChip(
                           showCheckmark: false,
@@ -628,9 +675,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           labelStyle: const TextStyle(color: Colors.white),
                           selectedColor: accentColor.withAlphaFraction(0.25),
                           backgroundColor: Colors.white.withAlphaFraction(0.05),
-                          side: BorderSide(color: (showSma50 ? accentColor : Colors.white24).withAlphaFraction(0.7)),
+                          side: BorderSide(
+                              color: (showSma50 ? accentColor : Colors.white24)
+                                  .withAlphaFraction(0.7)),
                           selected: showSma50,
-                          onSelected: (value) => setState(() => showSma50 = value),
+                          onSelected: (value) =>
+                              setState(() => showSma50 = value),
                         ),
                         FilterChip(
                           showCheckmark: false,
@@ -638,9 +688,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           labelStyle: const TextStyle(color: Colors.white),
                           selectedColor: accentColor.withAlphaFraction(0.25),
                           backgroundColor: Colors.white.withAlphaFraction(0.05),
-                          side: BorderSide(color: (showEma12 ? accentColor : Colors.white24).withAlphaFraction(0.7)),
+                          side: BorderSide(
+                              color: (showEma12 ? accentColor : Colors.white24)
+                                  .withAlphaFraction(0.7)),
                           selected: showEma12,
-                          onSelected: (value) => setState(() => showEma12 = value),
+                          onSelected: (value) =>
+                              setState(() => showEma12 = value),
                         ),
                         FilterChip(
                           showCheckmark: false,
@@ -648,9 +701,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           labelStyle: const TextStyle(color: Colors.white),
                           selectedColor: accentColor.withAlphaFraction(0.25),
                           backgroundColor: Colors.white.withAlphaFraction(0.05),
-                          side: BorderSide(color: (showEma26 ? accentColor : Colors.white24).withAlphaFraction(0.7)),
+                          side: BorderSide(
+                              color: (showEma26 ? accentColor : Colors.white24)
+                                  .withAlphaFraction(0.7)),
                           selected: showEma26,
-                          onSelected: (value) => setState(() => showEma26 = value),
+                          onSelected: (value) =>
+                              setState(() => showEma26 = value),
                         ),
                       ],
                     ),
@@ -659,14 +715,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     style: FilledButton.styleFrom(
                       backgroundColor: accentColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 26, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18)),
                     ),
                     onPressed: state.isLoading
                         ? null
                         : () {
                             final params = state.params.copyWith(
-                              ticker: tickerController.text.trim().toUpperCase(),
+                              ticker:
+                                  tickerController.text.trim().toUpperCase(),
                               preset: preset,
                               interval: interval,
                               days: horizon,
@@ -696,20 +755,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       labelText: label,
       hintText: hint,
       filled: true,
-  fillColor: Colors.white.withAlphaFraction(0.05),
+      fillColor: Colors.white.withAlphaFraction(0.05),
       labelStyle: const TextStyle(color: Colors.white70),
       hintStyle: const TextStyle(color: Colors.white54),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-  borderSide: BorderSide(color: Colors.white.withAlphaFraction(0.15)),
+        borderSide: BorderSide(color: Colors.white.withAlphaFraction(0.15)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-  borderSide: BorderSide(color: Colors.white.withAlphaFraction(0.12)),
+        borderSide: BorderSide(color: Colors.white.withAlphaFraction(0.12)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-  borderSide: BorderSide(color: Colors.white.withAlphaFraction(0.4)),
+        borderSide: BorderSide(color: Colors.white.withAlphaFraction(0.4)),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
     );
@@ -717,7 +776,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 class _OverviewSection extends StatelessWidget {
-  const _OverviewSection({super.key, required this.overview, required this.accentColor});
+  const _OverviewSection(
+      {super.key, required this.overview, required this.accentColor});
 
   final OverviewResponse overview;
   final Color accentColor;
@@ -731,8 +791,10 @@ class _OverviewSection extends StatelessWidget {
 
     final subtitleParts = [
       overview.metadata.ticker,
-      if ((overview.metadata.sector ?? '').isNotEmpty) overview.metadata.sector!,
-      if ((overview.metadata.industry ?? '').isNotEmpty) overview.metadata.industry!,
+      if ((overview.metadata.sector ?? '').isNotEmpty)
+        overview.metadata.sector!,
+      if ((overview.metadata.industry ?? '').isNotEmpty)
+        overview.metadata.industry!,
     ];
 
     return Column(
@@ -740,7 +802,9 @@ class _OverviewSection extends StatelessWidget {
       children: [
         SectionHeading(
           title: overview.metadata.name ?? overview.metadata.ticker,
-          subtitle: subtitleParts.isEmpty ? 'Insights snapshot' : subtitleParts.join(' • '),
+          subtitle: subtitleParts.isEmpty
+              ? 'Insights snapshot'
+              : subtitleParts.join(' • '),
           accentColor: accentColor,
         ),
         const SizedBox(height: 20),
@@ -751,7 +815,8 @@ class _OverviewSection extends StatelessWidget {
               AnimatedMetricCard(
                 title: 'Latest close',
                 value: currencyFormat.format(metrics.latestClose),
-                subtitle: '${metrics.pctChange.toStringAsFixed(2)}% vs previous close',
+                subtitle:
+                    '${metrics.pctChange.toStringAsFixed(2)}% vs previous close',
                 isPositive: metrics.pctChange >= 0,
                 accentColor: accentColor,
                 icon: Icons.stacked_line_chart_rounded,
@@ -779,7 +844,8 @@ class _OverviewSection extends StatelessWidget {
               cards.add(
                 AnimatedMetricCard(
                   title: 'Annualized volatility',
-                  value: '${highlights.annualizedVolatility!.toStringAsFixed(1)}%',
+                  value:
+                      '${highlights.annualizedVolatility!.toStringAsFixed(1)}%',
                   subtitle: 'Trailing 30 trading days',
                   accentColor: accentColor,
                   icon: Icons.speed_rounded,
@@ -789,7 +855,8 @@ class _OverviewSection extends StatelessWidget {
 
             final count = cards.length;
             final availableWidth = max(constraints.maxWidth, 1.0);
-            final targetWidth = (availableWidth - spacing * (count - 1)) / count;
+            final targetWidth =
+                (availableWidth - spacing * (count - 1)) / count;
             final cardWidth = max(220.0, targetWidth);
 
             return SingleChildScrollView(
@@ -819,9 +886,11 @@ class _OverviewSection extends StatelessWidget {
               duration: const Duration(milliseconds: 600),
               transitionBuilder: SectionTransitions.chart,
               child: history.isEmpty
-                  ? const _EmptyChartState(message: 'No price history available')
+                  ? const _EmptyChartState(
+                      message: 'No price history available')
                   : LineChart(
-                      key: ValueKey('history-${history.length}-${history.last.close}'),
+                      key: ValueKey(
+                          'history-${history.length}-${history.last.close}'),
                       _buildHistoryChart(history, accentColor),
                       duration: const Duration(milliseconds: 800),
                       curve: Curves.easeInOutCubic,
@@ -861,16 +930,21 @@ class _OverviewSection extends StatelessWidget {
     final maxDate = history.last.date;
     final minValue = history.map((p) => p.close).reduce(min);
     final maxValue = history.map((p) => p.close).reduce(max);
-    final diffX = maxDate.millisecondsSinceEpoch - minDate.millisecondsSinceEpoch;
+    final diffX =
+        maxDate.millisecondsSinceEpoch - minDate.millisecondsSinceEpoch;
     final diffY = maxValue - minValue;
     final xTicks = _generateAxisTicks(
       minDate.millisecondsSinceEpoch.toDouble(),
       maxDate.millisecondsSinceEpoch.toDouble(),
       desiredCount: 4,
     );
-    final intervalX = xTicks.length > 1 ? (xTicks[1] - xTicks[0]).abs() : (diffX <= 0 ? 1.0 : diffX.toDouble());
+    final intervalX = xTicks.length > 1
+        ? (xTicks[1] - xTicks[0]).abs()
+        : (diffX <= 0 ? 1.0 : diffX.toDouble());
     final yTicks = _generateAxisTicks(minValue, maxValue, desiredCount: 4);
-    final yStep = yTicks.length > 1 ? (yTicks[1] - yTicks[0]).abs() : (diffY == 0 ? (maxValue == 0 ? 1 : maxValue.abs()) : diffY.abs());
+    final yStep = yTicks.length > 1
+        ? (yTicks[1] - yTicks[0]).abs()
+        : (diffY == 0 ? (maxValue == 0 ? 1 : maxValue.abs()) : diffY.abs());
     final yTolerance = max(yStep.abs() * 0.35, 0.0001);
     final safeIntervalY = yStep == 0 ? 1.0 : yStep;
     final dateFormat = DateFormat.MMMd();
@@ -880,7 +954,7 @@ class _OverviewSection extends StatelessWidget {
       lineTouchData: LineTouchData(
         enabled: true,
         handleBuiltInTouches: true,
-        touchSpotThreshold: 100, // Increased even more for better detection on web
+        touchSpotThreshold: 20,
         touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
           // Explicit touch callback to ensure events are processed
         },
@@ -888,13 +962,17 @@ class _OverviewSection extends StatelessWidget {
           return indexes
               .map(
                 (index) => TouchedSpotIndicatorData(
-                  FlLine(color: Colors.white.withAlphaFraction(0.18), strokeWidth: 1.2),
+                  FlLine(
+                      color: Colors.white.withAlphaFraction(0.3),
+                      strokeWidth: 2,
+                      dashArray: [4, 4]),
                   FlDotData(
                     show: true,
-                    getDotPainter: (spot, percent, barData, idx) => FlDotCirclePainter(
-                      radius: 4.5,
+                    getDotPainter: (spot, percent, barData, idx) =>
+                        FlDotCirclePainter(
+                      radius: 5,
                       color: Colors.white,
-                      strokeWidth: 2.5,
+                      strokeWidth: 3,
                       strokeColor: accent,
                     ),
                   ),
@@ -903,23 +981,57 @@ class _OverviewSection extends StatelessWidget {
               .toList();
         },
         touchTooltipData: LineTouchTooltipData(
-          tooltipBgColor: const Color(0xff0d1220).withAlphaFraction(0.92),
-          tooltipRoundedRadius: 14,
-          tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          tooltipBgColor: const Color(0xff0d1220).withAlphaFraction(0.95),
+          tooltipRoundedRadius: 16,
+          tooltipPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          tooltipMargin: 12,
           fitInsideHorizontally: true,
           fitInsideVertically: true,
           getTooltipItems: (spots) {
             return spots.map((spot) {
               final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
               return LineTooltipItem(
-                '${dateFormat.format(date)}\n${currencyFormat.format(spot.y)}',
-                const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, height: 1.3),
+                '${dateFormat.format(date)}\n',
+                const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5),
+                children: [
+                  TextSpan(
+                    text: '${currencyFormat.format(spot.y)}',
+                    style: TextStyle(
+                        color: accent,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        height: 1.5),
+                  ),
+                ],
               );
             }).toList();
           },
         ),
       ),
-      gridData: const FlGridData(show: false),
+      gridData: FlGridData(
+        show: true,
+        drawVerticalLine: true,
+        drawHorizontalLine: true,
+        horizontalInterval: safeIntervalY.toDouble(),
+        verticalInterval: intervalX <= 0 ? null : intervalX,
+        getDrawingHorizontalLine: (value) {
+          return FlLine(
+            color: Colors.white.withAlphaFraction(0.06),
+            strokeWidth: 1,
+          );
+        },
+        getDrawingVerticalLine: (value) {
+          return FlLine(
+            color: Colors.white.withAlphaFraction(0.04),
+            strokeWidth: 1,
+          );
+        },
+      ),
       borderData: FlBorderData(
         show: true,
         border: Border(
@@ -936,7 +1048,8 @@ class _OverviewSection extends StatelessWidget {
             reservedSize: 32,
             interval: intervalX <= 0 ? 1.0 : intervalX,
             getTitlesWidget: (value, meta) {
-              final isDesiredTick = xTicks.any((tick) => _isApproximately(value, tick, intervalX * 0.35));
+              final isDesiredTick = xTicks.any(
+                  (tick) => _isApproximately(value, tick, intervalX * 0.35));
               if (!isDesiredTick) {
                 return const SizedBox.shrink();
               }
@@ -957,7 +1070,8 @@ class _OverviewSection extends StatelessWidget {
             reservedSize: 48,
             interval: safeIntervalY.toDouble(),
             getTitlesWidget: (value, meta) {
-              final showTick = yTicks.any((tick) => _isApproximately(value, tick, yTolerance));
+              final showTick = yTicks
+                  .any((tick) => _isApproximately(value, tick, yTolerance));
               if (!showTick) {
                 return const SizedBox.shrink();
               }
@@ -965,22 +1079,26 @@ class _OverviewSection extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
                   _formatAxisTick(value),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.2),
+                  style: const TextStyle(
+                      color: Colors.white70, fontSize: 11, height: 1.2),
                 ),
               );
             },
           ),
         ),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles:
+            const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
       lineBarsData: [
         LineChartBarData(
           isCurved: true,
+          curveSmoothness: 0.35,
+          preventCurveOverShooting: true,
           color: accent,
           barWidth: 3,
           gradient: LinearGradient(
-            colors: [accent, Color.lerp(accent, Colors.white, 0.4)!],
+            colors: [accent, Color.lerp(accent, Colors.white, 0.3)!],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
@@ -989,6 +1107,18 @@ class _OverviewSection extends StatelessWidget {
               FlSpot(point.date.millisecondsSinceEpoch.toDouble(), point.close),
           ],
           dotData: const FlDotData(show: false),
+          isStrokeCapRound: true,
+          belowBarData: BarAreaData(
+            show: true,
+            gradient: LinearGradient(
+              colors: [
+                accent.withAlphaFraction(0.15),
+                accent.withAlphaFraction(0.0),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
         ),
       ],
     );
@@ -996,7 +1126,11 @@ class _OverviewSection extends StatelessWidget {
 }
 
 class _ForecastSection extends StatelessWidget {
-  const _ForecastSection({super.key, required this.forecast, required this.overview, required this.accentColor});
+  const _ForecastSection(
+      {super.key,
+      required this.forecast,
+      required this.overview,
+      required this.accentColor});
 
   final ForecastResponse forecast;
   final OverviewResponse? overview;
@@ -1009,7 +1143,8 @@ class _ForecastSection extends StatelessWidget {
     final latest = forecast.forecast.isNotEmpty
         ? forecast.forecast.last.value
         : (history.isNotEmpty ? history.last.close : 0.0);
-    final origin = history.isNotEmpty ? history.last.close : (latest == 0 ? 1 : latest);
+    final origin =
+        history.isNotEmpty ? history.last.close : (latest == 0 ? 1 : latest);
     final deltaValue = origin == 0 ? 0.0 : ((latest - origin) / origin * 100);
     final deltaText = deltaValue.isFinite ? deltaValue.toStringAsFixed(2) : '0';
     final modelColor = Color.lerp(accentColor, Colors.orangeAccent, 0.35)!;
@@ -1034,12 +1169,16 @@ class _ForecastSection extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline_rounded, color: Colors.orangeAccent),
+                  const Icon(Icons.info_outline_rounded,
+                      color: Colors.orangeAccent),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       forecast.note!,
-                      style: const TextStyle(color: Colors.orangeAccent, fontSize: 12.5, height: 1.4),
+                      style: const TextStyle(
+                          color: Colors.orangeAccent,
+                          fontSize: 12.5,
+                          height: 1.4),
                     ),
                   ),
                 ],
@@ -1067,21 +1206,82 @@ class _ForecastSection extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         GlassContainer(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-          child: SizedBox(
-            height: 280,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 600),
-              transitionBuilder: SectionTransitions.chart,
-              child: (history.isEmpty && forecast.forecast.isEmpty)
-                  ? const _EmptyChartState(message: 'Forecast data not available yet')
-                  : LineChart(
-                      key: ValueKey('forecast-${forecast.ticker}-${forecast.forecast.length}-${history.length}'),
-                      _buildForecastChart(history, forecast.forecast, forecast.indicators, accentColor, modelColor),
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.easeInOutCubic,
-                    ),
-            ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Legend
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [accentColor, Color.lerp(accentColor, Colors.white, 0.3)!],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Historical',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CustomPaint(
+                        size: const Size(24, 3),
+                        painter: _DashedLinePainter(
+                          color: modelColor,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Forecast',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 280,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 600),
+                  transitionBuilder: SectionTransitions.chart,
+                  child: (history.isEmpty && forecast.forecast.isEmpty)
+                      ? const _EmptyChartState(
+                          message: 'Forecast data not available yet')
+                      : LineChart(
+                          key: ValueKey(
+                              'forecast-${forecast.ticker}-${forecast.forecast.length}-${history.length}'),
+                          _buildForecastChart(history, forecast.forecast,
+                              forecast.indicators, accentColor, modelColor),
+                          duration: const Duration(milliseconds: 800),
+                          curve: Curves.easeInOutCubic,
+                        ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -1095,8 +1295,14 @@ class _ForecastSection extends StatelessWidget {
     Color accent,
     Color modelColor,
   ) {
-    final baseData = [...history.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.close))];
-    final forecastData = [...forecastPoints.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value))];
+    final baseData = [
+      ...history
+          .map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.close))
+    ];
+    final forecastData = [
+      ...forecastPoints
+          .map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value))
+    ];
     if (forecastData.isNotEmpty && baseData.isNotEmpty) {
       final anchor = baseData.last;
       if ((forecastData.first.x - anchor.x).abs() > 0.5) {
@@ -1108,7 +1314,8 @@ class _ForecastSection extends StatelessWidget {
     final historyLookup = {for (final spot in baseData) spot.x: spot.y};
     final forecastLookup = {for (final spot in forecastData) spot.x: spot.y};
 
-    double? nearestValue(Map<double, double> source, double target, {double tolerance = 60000}) {
+    double? nearestValue(Map<double, double> source, double target,
+        {double tolerance = 60000}) {
       double? result;
       var bestDistance = tolerance;
       source.forEach((key, value) {
@@ -1124,16 +1331,20 @@ class _ForecastSection extends StatelessWidget {
     final allValues = [...baseData, ...forecastData];
     // Include indicator values in min/max calculations
     if (indicators?.sma20 != null) {
-      allValues.addAll(indicators!.sma20!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
+      allValues.addAll(indicators!.sma20!.map(
+          (e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
     }
     if (indicators?.sma50 != null) {
-      allValues.addAll(indicators!.sma50!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
+      allValues.addAll(indicators!.sma50!.map(
+          (e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
     }
     if (indicators?.ema12 != null) {
-      allValues.addAll(indicators!.ema12!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
+      allValues.addAll(indicators!.ema12!.map(
+          (e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
     }
     if (indicators?.ema26 != null) {
-      allValues.addAll(indicators!.ema26!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
+      allValues.addAll(indicators!.ema26!.map(
+          (e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)));
     }
     if (allValues.isEmpty) {
       return LineChartData(lineBarsData: []);
@@ -1142,14 +1353,18 @@ class _ForecastSection extends StatelessWidget {
     final maxX = allValues.last.x;
     final minY = allValues.map((e) => e.y).reduce(min);
     final maxY = allValues.map((e) => e.y).reduce(max);
-  final diffX = maxX - minX;
-  final xTicks = _generateAxisTicks(minX, maxX, desiredCount: 4);
-  final intervalX = xTicks.length > 1 ? (xTicks[1] - xTicks[0]).abs() : (diffX <= 0 ? 1.0 : diffX);
-  final diffY = maxY - minY;
-  final yTicks = _generateAxisTicks(minY, maxY, desiredCount: 4);
-  final yStep = yTicks.length > 1 ? (yTicks[1] - yTicks[0]).abs() : (diffY == 0 ? (maxY == 0 ? 1 : maxY.abs()) : diffY.abs());
-  final yTolerance = max(yStep.abs() * 0.35, 0.0001);
-  final safeIntervalY = yStep == 0 ? 1.0 : yStep;
+    final diffX = maxX - minX;
+    final xTicks = _generateAxisTicks(minX, maxX, desiredCount: 4);
+    final intervalX = xTicks.length > 1
+        ? (xTicks[1] - xTicks[0]).abs()
+        : (diffX <= 0 ? 1.0 : diffX);
+    final diffY = maxY - minY;
+    final yTicks = _generateAxisTicks(minY, maxY, desiredCount: 4);
+    final yStep = yTicks.length > 1
+        ? (yTicks[1] - yTicks[0]).abs()
+        : (diffY == 0 ? (maxY == 0 ? 1 : maxY.abs()) : diffY.abs());
+    final yTolerance = max(yStep.abs() * 0.35, 0.0001);
+    final safeIntervalY = yStep == 0 ? 1.0 : yStep;
     final dateFormat = DateFormat.MMMd();
     final currencyFormat = NumberFormat.simpleCurrency();
 
@@ -1157,7 +1372,7 @@ class _ForecastSection extends StatelessWidget {
       lineTouchData: LineTouchData(
         enabled: true,
         handleBuiltInTouches: true,
-        touchSpotThreshold: 100, // Increased even more for better detection on web
+        touchSpotThreshold: 20,
         touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
           // Explicit touch callback to ensure events are processed
         },
@@ -1165,15 +1380,20 @@ class _ForecastSection extends StatelessWidget {
           return indexes
               .map(
                 (index) => TouchedSpotIndicatorData(
-                  FlLine(color: Colors.white.withAlphaFraction(0.16), strokeWidth: 1.1),
+                  FlLine(
+                      color: Colors.white.withAlphaFraction(0.3),
+                      strokeWidth: 2,
+                      dashArray: [4, 4]),
                   FlDotData(
                     show: true,
                     getDotPainter: (spot, percent, barData, idx) {
-                      final color = (barData.gradient?.colors.first ?? barData.color ?? Colors.white);
+                      final color = (barData.gradient?.colors.first ??
+                          barData.color ??
+                          Colors.white);
                       return FlDotCirclePainter(
-                        radius: 4.5,
+                        radius: 5,
                         color: Colors.white,
-                        strokeWidth: 2.5,
+                        strokeWidth: 3,
                         strokeColor: color,
                       );
                     },
@@ -1183,18 +1403,25 @@ class _ForecastSection extends StatelessWidget {
               .toList();
         },
         touchTooltipData: LineTouchTooltipData(
-          tooltipBgColor: const Color(0xff0d1220).withAlphaFraction(0.92),
-          tooltipRoundedRadius: 14,
-          tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          tooltipBgColor: const Color(0xff0d1220).withAlphaFraction(0.95),
+          tooltipRoundedRadius: 16,
+          tooltipPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          tooltipMargin: 12,
           fitInsideHorizontally: true,
           fitInsideVertically: true,
           getTooltipItems: (spots) {
             if (spots.isEmpty) return [];
+            
+            // Group all spots by their x value
             final touchedX = spots.first.x;
             final date = DateTime.fromMillisecondsSinceEpoch(touchedX.toInt());
 
+            // Try to find values for both actual and forecast
             double? historyValue;
             double? forecastValue;
+            
+            // First check direct spots
             for (final spot in spots) {
               if (spot.barIndex == 0) {
                 historyValue = spot.y;
@@ -1203,16 +1430,22 @@ class _ForecastSection extends StatelessWidget {
               }
             }
 
-            // Fallback to nearestValue with more forgiving tolerance
-            historyValue ??= nearestValue(historyLookup, touchedX, tolerance: 86400000 * 3); // 3 days tolerance
-            forecastValue ??= nearestValue(forecastLookup, touchedX, tolerance: 86400000 * 3); // 3 days tolerance
+            // Fallback to nearest value with generous tolerance
+            historyValue ??= nearestValue(historyLookup, touchedX,
+                tolerance: 86400000 * 7); // 7 days tolerance
+            forecastValue ??= nearestValue(forecastLookup, touchedX,
+                tolerance: 86400000 * 7); // 7 days tolerance
 
             final children = <TextSpan>[];
             if (historyValue != null) {
               children.add(
                 TextSpan(
                   text: 'Actual: ${currencyFormat.format(historyValue)}\n',
-                  style: TextStyle(color: accent, fontSize: 13, fontWeight: FontWeight.w600, height: 1.3),
+                  style: TextStyle(
+                      color: accent,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      height: 1.5),
                 ),
               );
             }
@@ -1220,14 +1453,23 @@ class _ForecastSection extends StatelessWidget {
               children.add(
                 TextSpan(
                   text: 'Forecast: ${currencyFormat.format(forecastValue)}',
-                  style: TextStyle(color: modelColor, fontSize: 13, fontWeight: FontWeight.w600, height: 1.3),
+                  style: TextStyle(
+                      color: modelColor,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      height: 1.5),
                 ),
               );
             }
+            
             return [
               LineTooltipItem(
                 '${dateFormat.format(date)}\n',
-                const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, height: 1.3),
+                const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5),
                 children: children,
               ),
             ];
@@ -1238,7 +1480,25 @@ class _ForecastSection extends StatelessWidget {
       maxX: maxX,
       minY: minY == maxY ? minY * 0.95 : minY * 0.98,
       maxY: minY == maxY ? maxY * 1.05 : maxY * 1.02,
-      gridData: const FlGridData(show: false),
+      gridData: FlGridData(
+        show: true,
+        drawVerticalLine: true,
+        drawHorizontalLine: true,
+        horizontalInterval: safeIntervalY.toDouble(),
+        verticalInterval: intervalX <= 0 ? null : intervalX,
+        getDrawingHorizontalLine: (value) {
+          return FlLine(
+            color: Colors.white.withAlphaFraction(0.06),
+            strokeWidth: 1,
+          );
+        },
+        getDrawingVerticalLine: (value) {
+          return FlLine(
+            color: Colors.white.withAlphaFraction(0.04),
+            strokeWidth: 1,
+          );
+        },
+      ),
       borderData: FlBorderData(
         show: true,
         border: Border(
@@ -1255,14 +1515,17 @@ class _ForecastSection extends StatelessWidget {
             reservedSize: 32,
             interval: intervalX <= 0 ? 1.0 : intervalX,
             getTitlesWidget: (value, _) {
-              final isDesiredTick = xTicks.any((tick) => _isApproximately(value, tick, intervalX * 0.35));
+              final isDesiredTick = xTicks.any(
+                  (tick) => _isApproximately(value, tick, intervalX * 0.35));
               if (!isDesiredTick) {
                 return const SizedBox.shrink();
               }
               final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
               return Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(DateFormat.Md().format(date), style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                child: Text(DateFormat.Md().format(date),
+                    style:
+                        const TextStyle(color: Colors.white70, fontSize: 11)),
               );
             },
           ),
@@ -1273,7 +1536,8 @@ class _ForecastSection extends StatelessWidget {
             reservedSize: 48,
             interval: safeIntervalY.toDouble(),
             getTitlesWidget: (value, meta) {
-              final showTick = yTicks.any((tick) => _isApproximately(value, tick, yTolerance));
+              final showTick = yTicks
+                  .any((tick) => _isApproximately(value, tick, yTolerance));
               if (!showTick) {
                 return const SizedBox.shrink();
               }
@@ -1281,29 +1545,47 @@ class _ForecastSection extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
                   _formatAxisTick(value),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.2),
+                  style: const TextStyle(
+                      color: Colors.white70, fontSize: 11, height: 1.2),
                 ),
               );
             },
           ),
         ),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles:
+            const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
       lineBarsData: [
         LineChartBarData(
           spots: baseData,
           isCurved: true,
+          curveSmoothness: 0.35,
+          preventCurveOverShooting: true,
           color: accent,
           barWidth: 3,
           gradient: LinearGradient(
             colors: [accent, Color.lerp(accent, Colors.white, 0.3)!],
           ),
           dotData: const FlDotData(show: false),
+          isStrokeCapRound: true,
+          belowBarData: BarAreaData(
+            show: true,
+            gradient: LinearGradient(
+              colors: [
+                accent.withAlphaFraction(0.12),
+                accent.withAlphaFraction(0.0),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
         ),
         LineChartBarData(
           spots: forecastData,
           isCurved: true,
+          curveSmoothness: 0.35,
+          preventCurveOverShooting: true,
           color: modelColor,
           barWidth: 3,
           gradient: LinearGradient(
@@ -1311,11 +1593,15 @@ class _ForecastSection extends StatelessWidget {
           ),
           dashArray: const [6, 4],
           dotData: const FlDotData(show: false),
+          isStrokeCapRound: true,
         ),
         // Add technical indicator lines
         if (indicators?.sma20 != null)
           LineChartBarData(
-            spots: indicators!.sma20!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)).toList(),
+            spots: indicators!.sma20!
+                .map((e) =>
+                    FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value))
+                .toList(),
             isCurved: true,
             color: Colors.orange,
             barWidth: 2,
@@ -1323,7 +1609,10 @@ class _ForecastSection extends StatelessWidget {
           ),
         if (indicators?.sma50 != null)
           LineChartBarData(
-            spots: indicators!.sma50!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)).toList(),
+            spots: indicators!.sma50!
+                .map((e) =>
+                    FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value))
+                .toList(),
             isCurved: true,
             color: Colors.purple,
             barWidth: 2,
@@ -1331,7 +1620,10 @@ class _ForecastSection extends StatelessWidget {
           ),
         if (indicators?.ema12 != null)
           LineChartBarData(
-            spots: indicators!.ema12!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)).toList(),
+            spots: indicators!.ema12!
+                .map((e) =>
+                    FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value))
+                .toList(),
             isCurved: true,
             color: Colors.green,
             barWidth: 2,
@@ -1339,7 +1631,10 @@ class _ForecastSection extends StatelessWidget {
           ),
         if (indicators?.ema26 != null)
           LineChartBarData(
-            spots: indicators!.ema26!.map((e) => FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value)).toList(),
+            spots: indicators!.ema26!
+                .map((e) =>
+                    FlSpot(e.date.millisecondsSinceEpoch.toDouble(), e.value))
+                .toList(),
             isCurved: true,
             color: Colors.cyan,
             barWidth: 2,
@@ -1351,7 +1646,8 @@ class _ForecastSection extends StatelessWidget {
 }
 
 class _SentimentSection extends StatelessWidget {
-  const _SentimentSection({super.key, required this.sentiment, required this.accentColor});
+  const _SentimentSection(
+      {super.key, required this.sentiment, required this.accentColor});
 
   final SentimentResponse sentiment;
   final Color accentColor;
@@ -1359,42 +1655,77 @@ class _SentimentSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final summary = sentiment.summary;
+    final hasData = summary.total > 0;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 24),
         SectionHeading(
           title: 'News sentiment',
-          subtitle: '${summary.total} articles in focus',
+          subtitle: hasData ? '${summary.total} articles in focus' : 'Sentiment analysis',
           accentColor: accentColor,
         ),
         const SizedBox(height: 20),
-        _HorizontalMetricRow(
-          cards: [
-            AnimatedMetricCard(
-              title: 'Articles analysed',
-              value: '${summary.total}',
-              subtitle: 'Dominant: ${summary.dominantSentiment ?? 'N/A'}',
-              accentColor: accentColor,
-              icon: Icons.article_rounded,
+        if (!hasData)
+          GlassContainer(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Icon(Icons.newspaper, size: 48, color: accentColor.withAlphaFraction(0.5)),
+                const SizedBox(height: 16),
+                Text(
+                  'No recent news available',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'News sentiment data is currently unavailable for ${sentiment.ticker}.\nPlease try again later or check another ticker.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             ),
-            AnimatedMetricCard(
-              title: 'Average score',
-              value: summary.averageScore == null ? '—' : summary.averageScore!.toStringAsFixed(2),
-              subtitle: 'Pos ${summary.positive} • Neu ${summary.neutral} • Neg ${summary.negative}',
-              accentColor: accentColor,
-              icon: Icons.sentiment_satisfied_alt_rounded,
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        for (var i = 0; i < sentiment.records.length; i++)
-          _HeadlineTile(
-            key: ValueKey('headline-${sentiment.records[i].hashCode}'),
-            record: sentiment.records[i],
-            index: i,
-            accentColor: accentColor,
           ),
+        if (hasData) ...[
+          _HorizontalMetricRow(
+            cards: [
+              AnimatedMetricCard(
+                title: 'Articles analysed',
+                value: '${summary.total}',
+                subtitle: 'Dominant: ${summary.dominantSentiment ?? 'N/A'}',
+                accentColor: accentColor,
+                icon: Icons.article_rounded,
+              ),
+              AnimatedMetricCard(
+                title: 'Average score',
+                value: summary.averageScore == null
+                    ? '—'
+                    : summary.averageScore!.toStringAsFixed(2),
+                subtitle:
+                    'Pos ${summary.positive} • Neu ${summary.neutral} • Neg ${summary.negative}',
+                accentColor: accentColor,
+                icon: Icons.sentiment_satisfied_alt_rounded,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          for (var i = 0; i < sentiment.records.length; i++)
+            _HeadlineTile(
+              key: ValueKey('headline-${sentiment.records[i].hashCode}'),
+              record: sentiment.records[i],
+              index: i,
+              accentColor: accentColor,
+            ),
+        ],
       ],
     );
   }
@@ -1426,7 +1757,7 @@ class AnimatedMetricCard extends StatelessWidget {
         : (isPositive! ? Colors.greenAccent : Colors.orangeAccent);
 
     return GlassContainer(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -1436,36 +1767,46 @@ class AnimatedMetricCard extends StatelessWidget {
             children: [
               if (icon != null)
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(11),
                   decoration: BoxDecoration(
-                    color: highlight.withAlphaFraction(0.15),
-                    borderRadius: BorderRadius.circular(16),
+                    color: highlight.withAlphaFraction(0.18),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: highlight.withAlphaFraction(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: Icon(icon, color: highlight, size: 20),
+                  child: Icon(icon, color: highlight, size: 22),
                 ),
-              if (icon != null) const SizedBox(width: 12),
+              if (icon != null) const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   title.toUpperCase(),
                   style: const TextStyle(
-                    color: Colors.white70,
-                    letterSpacing: 1.2,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                    color: Colors.white60,
+                    letterSpacing: 1.3,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 400),
             transitionBuilder: (child, animation) {
-              final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+              final curved = CurvedAnimation(
+                  parent: animation, curve: Curves.easeOutCubic);
               return FadeTransition(
                 opacity: curved,
                 child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(curved),
+                  position: Tween<Offset>(
+                          begin: const Offset(0, 0.12), end: Offset.zero)
+                      .animate(curved),
                   child: child,
                 ),
               );
@@ -1474,17 +1815,23 @@ class AnimatedMetricCard extends StatelessWidget {
               value,
               key: ValueKey(value),
               style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
                 color: Colors.white,
+                letterSpacing: -0.5,
               ),
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               subtitle!,
-              style: TextStyle(color: subtitleColor, fontSize: 12.5),
+              style: TextStyle(
+                color: subtitleColor,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                height: 1.3,
+              ),
             ),
           ],
         ],
@@ -1530,7 +1877,11 @@ class _HorizontalMetricRow extends StatelessWidget {
 }
 
 class _HighlightChip extends StatelessWidget {
-  const _HighlightChip({required this.label, required this.date, required this.percent, required this.accentColor});
+  const _HighlightChip(
+      {required this.label,
+      required this.date,
+      required this.percent,
+      required this.accentColor});
 
   final String label;
   final DateTime date;
@@ -1540,7 +1891,8 @@ class _HighlightChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPositive = percent >= 0;
-    final icon = isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded;
+    final icon =
+        isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded;
     return GlassContainer(
       showShadow: false,
       borderRadius: 18,
@@ -1557,7 +1909,10 @@ class _HighlightChip extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '${percent.toStringAsFixed(2)}%',
-            style: TextStyle(color: accentColor, fontWeight: FontWeight.w600, fontSize: 12.5),
+            style: TextStyle(
+                color: accentColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5),
           ),
         ],
       ),
@@ -1566,7 +1921,11 @@ class _HighlightChip extends StatelessWidget {
 }
 
 class _HeadlineTile extends StatelessWidget {
-  const _HeadlineTile({super.key, required this.record, required this.index, required this.accentColor});
+  const _HeadlineTile(
+      {super.key,
+      required this.record,
+      required this.index,
+      required this.accentColor});
 
   final SentimentRecord record;
   final int index;
@@ -1618,14 +1977,16 @@ class _HeadlineTile extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         '${record.publisher ?? 'Unknown source'} • $dateText',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: color.withAlphaFraction(0.6)),
@@ -1645,7 +2006,8 @@ class _HeadlineTile extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.bolt_rounded, size: 16, color: color.withAlphaFraction(0.8)),
+                Icon(Icons.bolt_rounded,
+                    size: 16, color: color.withAlphaFraction(0.8)),
                 const SizedBox(width: 6),
                 Text(
                   'Score ${record.score.toStringAsFixed(2)}',
@@ -1707,7 +2069,8 @@ class GlassContainer extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: radius,
-              border: Border.all(color: Colors.white.withAlphaFraction(strokeOpacity)),
+              border: Border.all(
+                  color: Colors.white.withAlphaFraction(strokeOpacity)),
               gradient: LinearGradient(
                 colors: [
                   Colors.white.withAlphaFraction(backgroundOpacity),
@@ -1729,7 +2092,11 @@ class GlassContainer extends StatelessWidget {
 }
 
 class SectionHeading extends StatelessWidget {
-  const SectionHeading({super.key, required this.title, required this.subtitle, required this.accentColor});
+  const SectionHeading(
+      {super.key,
+      required this.title,
+      required this.subtitle,
+      required this.accentColor});
 
   final String title;
   final String subtitle;
@@ -1806,7 +2173,7 @@ class _DashboardHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Fluent forecasts and sentiment intelligence tailored to your next move.',
+                  'Advanced stock forecasting powered by LSTM neural networks and real-time sentiment analysis. Get accurate price predictions and market insights.',
                   style: TextStyle(color: Colors.white70, fontSize: 13.5),
                 ),
                 const SizedBox(height: 14),
@@ -1823,7 +2190,9 @@ class _DashboardHeader extends StatelessWidget {
                       _HeaderPill(
                         icon: Icons.memory_rounded,
                         label: '${state.models.length} models',
-                        accentColor: state.hasSavedLstmForTicker ? Colors.greenAccent : accentColor,
+                        accentColor: state.hasSavedLstmForTicker
+                            ? Colors.greenAccent
+                            : accentColor,
                         subtle: !state.hasSavedLstmForTicker,
                       ),
                     _HeaderPill(
@@ -1844,24 +2213,30 @@ class _DashboardHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 20),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            child: state.isLoading
-                ? SizedBox(
-                    key: const ValueKey('loading'),
-                    width: 42,
-                    height: 42,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3.2,
-                      valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-                    ),
-                  )
-                : Icon(
-                    Icons.auto_graph_rounded,
-                    key: const ValueKey('idle'),
-                    color: accentColor,
-                    size: 40,
-                  ),
+          Row(
+            children: [
+              _HelpButton(accentColor: accentColor),
+              const SizedBox(width: 16),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: state.isLoading
+                    ? SizedBox(
+                        key: const ValueKey('loading'),
+                        width: 42,
+                        height: 42,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3.2,
+                          valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                        ),
+                      )
+                    : Icon(
+                        Icons.auto_graph_rounded,
+                        key: const ValueKey('idle'),
+                        color: accentColor,
+                        size: 40,
+                      ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1869,8 +2244,333 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
+class _HelpButton extends StatelessWidget {
+  const _HelpButton({super.key, required this.accentColor});
+
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      richMessage: WidgetSpan(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          accentColor.withAlphaFraction(0.3),
+                          accentColor.withAlphaFraction(0.1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: accentColor.withAlphaFraction(0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.lightbulb_rounded,
+                      color: accentColor,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'How to Use AI Stock Insights',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Divider
+              Container(
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      accentColor.withAlphaFraction(0.3),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Step items
+              _HelpStep(
+                number: '1',
+                icon: Icons.business_rounded,
+                title: 'Select Ticker',
+                description: 'Enter stock symbols like AAPL, MSFT, TSLA',
+                accentColor: accentColor,
+              ),
+              const SizedBox(height: 12),
+              _HelpStep(
+                number: '2',
+                icon: Icons.date_range_rounded,
+                title: 'Choose Time Range',
+                description: 'Select 1M, 3M, 6M, 1Y or custom dates',
+                accentColor: accentColor,
+              ),
+              const SizedBox(height: 12),
+              _HelpStep(
+                number: '3',
+                icon: Icons.schedule_rounded,
+                title: 'Set Interval',
+                description: 'Choose data frequency from 1m to 1mo',
+                accentColor: accentColor,
+              ),
+              const SizedBox(height: 12),
+              _HelpStep(
+                number: '4',
+                icon: Icons.trending_up_rounded,
+                title: 'Configure Forecast',
+                description: 'Set days & enable SMA/EMA indicators',
+                accentColor: accentColor,
+              ),
+              const SizedBox(height: 12),
+              _HelpStep(
+                number: '5',
+                icon: Icons.sentiment_satisfied_alt_rounded,
+                title: 'Enable Sentiment',
+                description: 'Toggle for news sentiment analysis',
+                accentColor: accentColor,
+              ),
+              const SizedBox(height: 12),
+              _HelpStep(
+                number: '6',
+                icon: Icons.insights_rounded,
+                title: 'Get Insights',
+                description: 'Click "Refresh" to generate forecasts',
+                accentColor: accentColor,
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Bottom tip
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      accentColor.withAlphaFraction(0.15),
+                      accentColor.withAlphaFraction(0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: accentColor.withAlphaFraction(0.25),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.tips_and_updates_rounded,
+                      color: accentColor,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Pro Tip: LSTM models provide the most accurate forecasts',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xff1a1f2e),
+            const Color(0xff0d1220),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: accentColor.withAlphaFraction(0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withAlphaFraction(0.15),
+            blurRadius: 25,
+            spreadRadius: 2,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: Colors.black.withAlphaFraction(0.5),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.all(8),
+      preferBelow: false,
+      child: IconButton(
+        onPressed: () {},
+        icon: Icon(
+          Icons.help_outline_rounded,
+          color: accentColor,
+          size: 24,
+        ),
+        style: IconButton.styleFrom(
+          backgroundColor: accentColor.withAlphaFraction(0.15),
+          padding: const EdgeInsets.all(8),
+        ),
+      ),
+    );
+  }
+}
+
+class _HelpStep extends StatelessWidget {
+  const _HelpStep({
+    super.key,
+    required this.number,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.accentColor,
+  });
+
+  final String number;
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Number badge
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                accentColor,
+                accentColor.withAlphaFraction(0.7),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withAlphaFraction(0.4),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        
+        // Icon
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: accentColor.withAlphaFraction(0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: accentColor.withAlphaFraction(0.2),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: accentColor.withAlphaFraction(0.9),
+            size: 16,
+          ),
+        ),
+        const SizedBox(width: 12),
+        
+        // Text content
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                description,
+                style: TextStyle(
+                  color: Colors.white.withAlphaFraction(0.7),
+                  fontSize: 12,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+
 class _HeaderPill extends StatelessWidget {
-  const _HeaderPill({required this.icon, required this.label, required this.accentColor, this.subtle = false});
+  const _HeaderPill(
+      {required this.icon,
+      required this.label,
+      required this.accentColor,
+      this.subtle = false});
 
   final IconData icon;
   final String label;
@@ -1879,8 +2579,12 @@ class _HeaderPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  final background = subtle ? Colors.white.withAlphaFraction(0.05) : accentColor.withAlphaFraction(0.18);
-  final border = subtle ? Colors.white.withAlphaFraction(0.15) : accentColor.withAlphaFraction(0.5);
+    final background = subtle
+        ? Colors.white.withAlphaFraction(0.05)
+        : accentColor.withAlphaFraction(0.18);
+    final border = subtle
+        ? Colors.white.withAlphaFraction(0.15)
+        : accentColor.withAlphaFraction(0.5);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
@@ -1895,7 +2599,8 @@ class _HeaderPill extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(color: Colors.white, fontSize: 12.5, letterSpacing: 0.6),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 12.5, letterSpacing: 0.6),
           ),
         ],
       ),
@@ -1905,7 +2610,8 @@ class _HeaderPill extends StatelessWidget {
 
 class SectionTransitions {
   static Widget chart(Widget child, Animation<double> animation) {
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+    final curved =
+        CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
     return FadeTransition(
       opacity: curved,
       child: ScaleTransition(
@@ -1927,7 +2633,8 @@ class _EmptyChartState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.data_exploration_rounded, color: Colors.white24, size: 36),
+          const Icon(Icons.data_exploration_rounded,
+              color: Colors.white24, size: 36),
           const SizedBox(height: 10),
           Text(
             message,
@@ -1950,7 +2657,8 @@ class _AnimatedGradientBackground extends StatelessWidget {
     const primary = Color(0xff05070d);
     const secondary = Color(0xff0b1220);
     const tertiary = Color(0xff111a2e);
-    final accentGlow = Color.lerp(accentColor, Colors.white, 0.25)!.withAlphaFraction(0.12);
+    final accentGlow =
+        Color.lerp(accentColor, Colors.white, 0.25)!.withAlphaFraction(0.12);
     return IgnorePointer(
       ignoring: true,
       child: AnimatedContainer(
@@ -1992,7 +2700,10 @@ class _AnimatedGradientBackground extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.bottomLeft,
                     end: Alignment.topRight,
-                    colors: [Colors.transparent, accentColor.withAlphaFraction(0.08)],
+                    colors: [
+                      Colors.transparent,
+                      accentColor.withAlphaFraction(0.08)
+                    ],
                   ),
                 ),
               ),
@@ -2005,7 +2716,8 @@ class _AnimatedGradientBackground extends StatelessWidget {
 }
 
 class _BackgroundGridPainter extends CustomPainter {
-  _BackgroundGridPainter({required this.baseColor, required this.accentOverlay});
+  _BackgroundGridPainter(
+      {required this.baseColor, required this.accentOverlay});
 
   final Color baseColor;
   final Color accentOverlay;
@@ -2043,7 +2755,8 @@ class _BackgroundGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _BackgroundGridPainter oldDelegate) {
-    return oldDelegate.baseColor != baseColor || oldDelegate.accentOverlay != accentOverlay;
+    return oldDelegate.baseColor != baseColor ||
+        oldDelegate.accentOverlay != accentOverlay;
   }
 }
 
@@ -2123,7 +2836,8 @@ class _ShimmerEffect extends StatefulWidget {
   State<_ShimmerEffect> createState() => _ShimmerEffectState();
 }
 
-class _ShimmerEffectState extends State<_ShimmerEffect> with SingleTickerProviderStateMixin {
+class _ShimmerEffectState extends State<_ShimmerEffect>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -2337,7 +3051,8 @@ class _AnimatedPressable extends StatefulWidget {
   State<_AnimatedPressable> createState() => _AnimatedPressableState();
 }
 
-class _AnimatedPressableState extends State<_AnimatedPressable> with SingleTickerProviderStateMixin {
+class _AnimatedPressableState extends State<_AnimatedPressable>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -2389,5 +3104,46 @@ class _AnimatedPressableState extends State<_AnimatedPressable> with SingleTicke
         child: widget.child,
       ),
     );
+  }
+}
+
+// Custom painter for dashed lines in legend
+class _DashedLinePainter extends CustomPainter {
+  _DashedLinePainter({
+    required this.color,
+    this.strokeWidth = 2,
+    this.dashWidth = 4,
+    this.dashSpace = 3,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashSpace;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    double startX = 0;
+    while (startX < size.width) {
+      canvas.drawLine(
+        Offset(startX, size.height / 2),
+        Offset(min(startX + dashWidth, size.width), size.height / 2),
+        paint,
+      );
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.dashWidth != dashWidth ||
+        oldDelegate.dashSpace != dashSpace;
   }
 }
