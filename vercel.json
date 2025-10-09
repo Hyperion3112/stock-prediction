@@ -1,0 +1,15 @@
+{
+  "buildCommand": "echo 'Using pre-built Flutter files from flutter_app/build/web'",
+  "outputDirectory": "flutter_app/build/web",
+  "installCommand": "echo 'No installation needed - using pre-built files'",
+  "framework": null,
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
