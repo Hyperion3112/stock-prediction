@@ -452,9 +452,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             key: ValueKey(
                                                 'forecast-${state.forecast!.ticker}-${state.forecast!.forecast.length}'),
                                             forecast: state.forecast!,
-                                        overview: state.overview,
-                                        accentColor: accent,
-                                      ),
+                                            overview: state.overview,
+                                            accentColor: accent,
+                                          )
+                                        : const SizedBox.shrink(
+                                            key: ValueKey('forecast-empty'),
+                                          )),
                               ),
                             ),
                             const SliverToBoxAdapter(
@@ -950,10 +953,10 @@ class _OverviewSection extends StatelessWidget {
         },
         touchTooltipData: LineTouchTooltipData(
           tooltipBgColor: const Color(0xff1a1f2e),
-          tooltipRoundedRadius: 16,
+          tooltipRoundedRadius: 12,
           tooltipPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          tooltipMargin: 12,
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          tooltipMargin: 24,
           tooltipBorder: BorderSide(
             color: accent.withAlphaFraction(0.3),
             width: 1.5,
@@ -1372,79 +1375,58 @@ class _ForecastSection extends StatelessWidget {
         },
         touchTooltipData: LineTouchTooltipData(
           tooltipBgColor: const Color(0xff1a1f2e),
-          tooltipRoundedRadius: 16,
+          tooltipRoundedRadius: 12,
           tooltipPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          tooltipMargin: 12,
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          tooltipMargin: 24,
           tooltipBorder: BorderSide(
-            color: Colors.white.withAlphaFraction(0.2),
+            color: accent.withAlphaFraction(0.3),
             width: 1.5,
           ),
           fitInsideHorizontally: true,
           fitInsideVertically: true,
+          rotateAngle: 0,
           getTooltipItems: (spots) {
-            if (spots.isEmpty) return [];
-            
-            // Group all spots by their x value
-            final touchedX = spots.first.x;
-            final date = DateTime.fromMillisecondsSinceEpoch(touchedX.toInt());
-
-            // Try to find values for both actual and forecast
-            double? historyValue;
-            double? forecastValue;
-            
-            // First check direct spots
-            for (final spot in spots) {
-              if (spot.barIndex == 0) {
-                historyValue = spot.y;
-              } else if (spot.barIndex == 1) {
-                forecastValue = spot.y;
+            return spots.map((spot) {
+              final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+              final isHistory = spot.barIndex == 0;
+              final isForecast = spot.barIndex == 1;
+              final color = spot.bar.gradient?.colors.first ?? spot.bar.color;
+              
+              String label;
+              if (isHistory) {
+                label = 'Historical';
+              } else if (isForecast) {
+                label = 'Forecast';
+              } else {
+                // For technical indicators
+                final indicatorNames = ['', '', 'SMA-20', 'SMA-50', 'EMA-12', 'EMA-26'];
+                label = spot.barIndex < indicatorNames.length 
+                    ? indicatorNames[spot.barIndex] 
+                    : 'Indicator';
               }
-            }
 
-            // Fallback to nearest value with generous tolerance
-            historyValue ??= nearestValue(historyLookup, touchedX,
-                tolerance: 86400000 * 7); // 7 days tolerance
-            forecastValue ??= nearestValue(forecastLookup, touchedX,
-                tolerance: 86400000 * 7); // 7 days tolerance
-
-            final children = <TextSpan>[];
-            if (historyValue != null) {
-              children.add(
-                TextSpan(
-                  text: 'Actual: ${currencyFormat.format(historyValue)}\n',
-                  style: TextStyle(
-                      color: accent,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      height: 1.5),
-                ),
-              );
-            }
-            if (forecastValue != null) {
-              children.add(
-                TextSpan(
-                  text: 'Forecast: ${currencyFormat.format(forecastValue)}',
-                  style: TextStyle(
-                      color: modelColor,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      height: 1.5),
-                ),
-              );
-            }
-            
-            return [
-              LineTooltipItem(
-                '${dateFormat.format(date)}\n',
+              return LineTooltipItem(
+                '${dateFormat.format(date)} • $label\n',
                 const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    height: 1.5),
-                children: children,
-              ),
-            ];
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
+                ),
+                children: [
+                  TextSpan(
+                    text: currencyFormat.format(spot.y),
+                    style: TextStyle(
+                      color: color ?? Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              );
+            }).toList();
           },
         ),
       ),
@@ -2364,11 +2346,11 @@ class _AnimatedGradientBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xff05070d);
-    const secondary = Color(0xff0b1220);
-    const tertiary = Color(0xff111a2e);
-    final accentGlow =
-        Color.lerp(accentColor, Colors.white, 0.25)!.withAlphaFraction(0.12);
+    // Professional, clean gradient background
+    const primary = Color(0xff0a0e1a);      // Deep navy
+    const secondary = Color(0xff0f1729);    // Slightly lighter navy
+    const tertiary = Color(0xff141d35);     // Mid navy
+    
     return IgnorePointer(
       ignoring: true,
       child: AnimatedContainer(
@@ -2378,96 +2360,14 @@ class _AnimatedGradientBackground extends StatelessWidget {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [primary, secondary, tertiary],
+            stops: [0.0, 0.5, 1.0],
           ),
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _BackgroundGridPainter(
-                  baseColor: Colors.white.withAlphaFraction(0.035),
-                  accentOverlay: accentGlow,
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.topLeft,
-                    radius: 1.4,
-                    colors: [accentGlow, Colors.transparent],
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomLeft,
-                    end: Alignment.topRight,
-                    colors: [
-                      Colors.transparent,
-                      accentColor.withAlphaFraction(0.08)
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
-  }
-}
-
-class _BackgroundGridPainter extends CustomPainter {
-  _BackgroundGridPainter(
-      {required this.baseColor, required this.accentOverlay});
-
-  final Color baseColor;
-  final Color accentOverlay;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const spacing = 96.0;
-    final gridPaint = Paint()
-      ..color = baseColor
-     
-      ..strokeWidth = 1;
-
-    for (double x = 0; x <= size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (double y = 0; y <= size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    final accentPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-        colors: [accentOverlay, Colors.transparent],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final accentPath = Path()
-      ..moveTo(size.width * 0.55, -size.height * 0.2)
-      ..lineTo(size.width * 1.1, -size.height * 0.1)
-      ..lineTo(size.width * 0.8, size.height * 1.2)
-      ..lineTo(size.width * 0.3, size.height)
-      ..close();
-
-    canvas.drawPath(accentPath, accentPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _BackgroundGridPainter oldDelegate) {
-    return oldDelegate.baseColor != baseColor ||
-        oldDelegate.accentOverlay != accentOverlay;
   }
 }
 
