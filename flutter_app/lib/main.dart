@@ -79,7 +79,7 @@ class StockInsightsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AI Stock Insights',
+      title: 'AI Powered Stock Forecast',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -1951,7 +1951,7 @@ class _DashboardHeader extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(40, 50, 40, 50),
+            padding: const EdgeInsets.fromLTRB(40, 40, 40, 50),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -1962,138 +1962,120 @@ class _DashboardHeader extends StatelessWidget {
                 ],
               ),
             ),
-            child: Column(
+            child: Stack(
               children: [
-                // Main title with animation
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                // Help button in top right corner
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: _HelpButton(accentColor: accentColor),
+                ),
+                // Main content
+                Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            accentColor.withAlphaFraction(0.3),
-                            accentColor.withAlphaFraction(0.15),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accentColor.withAlphaFraction(0.4),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 400),
-                        child: state.isLoading
-                            ? SizedBox(
-                                key: const ValueKey('loading'),
-                                width: 40,
-                                height: 40,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 3.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-                                ),
-                              )
-                            : Icon(
-                                Icons.auto_graph_rounded,
-                                key: const ValueKey('idle'),
-                                color: accentColor,
-                                size: 40,
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ShaderMask(
-                            shaderCallback: (bounds) => LinearGradient(
+                    // Main title with animation
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
                               colors: [
-                                Colors.white,
-                                accentColor.withAlphaFraction(0.9),
+                                accentColor.withAlphaFraction(0.3),
+                                accentColor.withAlphaFraction(0.15),
                               ],
-                            ).createShader(bounds),
-                            child: Text(
-                              'AI Stock Insights',
-                              style: TextStyle(
-                                fontSize: 42,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
-                                height: 1.1,
-                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            height: 4,
-                            width: 80,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  accentColor,
-                                  accentColor.withAlphaFraction(0.3),
-                                  Colors.transparent,
-                                ],
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentColor.withAlphaFraction(0.4),
+                                blurRadius: 20,
+                                spreadRadius: 2,
                               ),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
+                            ],
                           ),
-                        ],
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 400),
+                            child: state.isLoading
+                                ? SizedBox(
+                                    key: const ValueKey('loading'),
+                                    width: 40,
+                                    height: 40,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 3.5,
+                                      valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.auto_graph_rounded,
+                                    key: const ValueKey('idle'),
+                                    color: accentColor,
+                                    size: 40,
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ShaderMask(
+                                shaderCallback: (bounds) => LinearGradient(
+                                  colors: [
+                                    Colors.white,
+                                    accentColor.withAlphaFraction(0.9),
+                                  ],
+                                ).createShader(bounds),
+                                child: Text(
+                                  'AI Stock Insights',
+                                  style: TextStyle(
+                                    fontSize: 42,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: -0.5,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                height: 4,
+                                width: 80,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      accentColor,
+                                      accentColor.withAlphaFraction(0.3),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+                    // Comprehensive description
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'A cutting-edge financial analysis platform that leverages LSTM (Long Short-Term Memory) neural networks to predict stock price movements with unprecedented accuracy. By combining advanced deep learning algorithms with real-time sentiment analysis from news and social media, this application provides actionable market insights and forecasts to help you make informed investment decisions. Analyze historical trends, visualize technical indicators, and discover data-driven predictions for your favorite stocks.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withAlphaFraction(0.85),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          height: 1.6,
+                          letterSpacing: 0.2,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                // Subtitle with better styling
-                Text(
-                  'Advanced stock forecasting powered by LSTM neural networks and real-time sentiment analysis',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withAlphaFraction(0.85),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    height: 1.5,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Feature pills
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _FeaturePill(
-                      icon: Icons.psychology_rounded,
-                      label: 'LSTM Neural Networks',
-                      accentColor: accentColor,
-                    ),
-                    _FeaturePill(
-                      icon: Icons.trending_up_rounded,
-                      label: 'Price Predictions',
-                      accentColor: accentColor,
-                    ),
-                    _FeaturePill(
-                      icon: Icons.sentiment_satisfied_rounded,
-                      label: 'Sentiment Analysis',
-                      accentColor: accentColor,
-                    ),
-                    _FeaturePill(
-                      icon: Icons.insights_rounded,
-                      label: 'Market Insights',
-                      accentColor: accentColor,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Help button
-                _HelpButton(accentColor: accentColor),
               ],
             ),
           ),
@@ -2103,52 +2085,6 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
-class _FeaturePill extends StatelessWidget {
-  const _FeaturePill({
-    required this.icon,
-    required this.label,
-    required this.accentColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlphaFraction(0.08),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: accentColor.withAlphaFraction(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: accentColor,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withAlphaFraction(0.9),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _HelpButton extends StatelessWidget {
   const _HelpButton({super.key, required this.accentColor});
