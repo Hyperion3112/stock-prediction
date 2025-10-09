@@ -76,6 +76,10 @@ class ApiClient {
     bool ema12 = false,
     bool ema26 = false,
   }) async {
+    // Increase timeout for larger forecast horizons (LSTM prediction is sequential and slower)
+    // Base timeout + 2 seconds per forecast day for LSTM models
+    final timeout = Duration(seconds: useLstm ? 60 + (days * 2) : 60);
+    
     final response = await _getWithTimeout(
       _buildUri('/forecast', {
         'ticker': ticker,
@@ -90,6 +94,7 @@ class ApiClient {
         'ema_12': ema12,
         'ema_26': ema26,
       }),
+      timeout: timeout,
     );
     _ensureSuccess(response);
     final data = jsonDecode(response.body) as Map<String, dynamic>;

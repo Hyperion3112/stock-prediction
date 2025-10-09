@@ -115,7 +115,6 @@ class DashboardParams {
     required this.interval,
     required this.preset,
     required this.days,
-    required this.includeSentiment,
     this.sma20 = false,
     this.sma50 = false,
     this.ema12 = false,
@@ -126,7 +125,6 @@ class DashboardParams {
   final String interval;
   final String preset;
   final int days;
-  final bool includeSentiment;
   final bool sma20;
   final bool sma50;
   final bool ema12;
@@ -137,7 +135,6 @@ class DashboardParams {
     String? interval,
     String? preset,
     int? days,
-    bool? includeSentiment,
     bool? sma20,
     bool? sma50,
     bool? ema12,
@@ -148,7 +145,6 @@ class DashboardParams {
       interval: interval ?? this.interval,
       preset: preset ?? this.preset,
       days: days ?? this.days,
-      includeSentiment: includeSentiment ?? this.includeSentiment,
       sma20: sma20 ?? this.sma20,
       sma50: sma50 ?? this.sma50,
       ema12: ema12 ?? this.ema12,
@@ -162,19 +158,19 @@ class DashboardState {
     required this.params,
     this.overview,
     this.forecast,
-    this.sentiment,
     this.models = const [],
     this.isLoading = false,
     this.errorMessage,
+    this.loadingCounter = 0,
   });
 
   final DashboardParams params;
   final OverviewResponse? overview;
   final ForecastResponse? forecast;
-  final SentimentResponse? sentiment;
   final List<ModelInfo> models;
   final bool isLoading;
   final String? errorMessage;
+  final int loadingCounter;
 
   bool get hasSavedLstmForTicker => models.any(
       (model) => model.ticker.toUpperCase() == params.ticker.toUpperCase());
@@ -183,10 +179,10 @@ class DashboardState {
     DashboardParams? params,
     OverviewResponse? overview,
     ForecastResponse? forecast,
-    SentimentResponse? sentiment,
     List<ModelInfo>? models,
     bool? isLoading,
     Object? errorMessage = _sentinel,
+    int? loadingCounter,
   }) {
     final String? resolvedErrorMessage = identical(errorMessage, _sentinel)
         ? this.errorMessage
@@ -196,10 +192,10 @@ class DashboardState {
       params: params ?? this.params,
       overview: overview ?? this.overview,
       forecast: forecast ?? this.forecast,
-      sentiment: sentiment ?? this.sentiment,
       models: models ?? this.models,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: resolvedErrorMessage,
+      loadingCounter: loadingCounter ?? this.loadingCounter,
     );
   }
 }
@@ -247,7 +243,6 @@ class DashboardController extends ChangeNotifier {
             interval: '1d',
             preset: '6M',
             days: 30,
-            includeSentiment: true,
           ),
         );
 
@@ -270,7 +265,11 @@ class DashboardController extends ChangeNotifier {
 
   Future<void> loadData({bool force = false}) async {
     if (_state.isLoading) return;
-    _state = _state.copyWith(isLoading: true, errorMessage: null);
+    _state = _state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      loadingCounter: _state.loadingCounter + 1,
+    );
     notifyListeners();
 
     final params = _state.params;
@@ -290,21 +289,10 @@ class DashboardController extends ChangeNotifier {
         ema12: params.ema12,
         ema26: params.ema26,
       );
-      SentimentResponse? sentiment;
-      if (params.includeSentiment) {
-        try {
-          sentiment = await _client.fetchSentiment(ticker: params.ticker);
-          print('DEBUG: Sentiment loaded for ${params.ticker}: ${sentiment?.summary.total ?? 0} articles');
-        } catch (e) {
-          print('DEBUG: Failed to load sentiment for ${params.ticker}: $e');
-          sentiment = null;
-        }
-      }
 
       _state = _state.copyWith(
         overview: overview,
         forecast: forecast,
-        sentiment: sentiment,
         isLoading: false,
         errorMessage: null,
       );
@@ -334,7 +322,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String preset = '6M';
   String interval = '1d';
   int horizon = 30;
-  bool includeSentiment = true;
   bool showSma20 = false;
   bool showSma50 = false;
   bool showEma12 = false;
@@ -429,45 +416,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               child: AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 500),
                                 transitionBuilder: _sectionTransitionBuilder,
-                                child: state.overview == null
-                                    ? (state.isLoading
-                                        ? const _OverviewLoadingSkeleton()
-                                        : const SizedBox.shrink())
-                                    : _OverviewSection(
-                                        key: ValueKey(
-                                            'overview-${state.overview!.metadata.ticker}-${state.overview!.metrics.latestClose}'),
-                                        overview: state.overview!,
-                                        accentColor: accent,
-                                      ),
+                                child: state.isLoading
+                                    ? Column(
+                                        key: ValueKey('overview-loading-${state.loadingCounter}'),
+                                        children: [
+                                          _RollingLoadingMessage(accentColor: accent),
+                                          const _OverviewLoadingSkeleton(),
+                                        ],
+                                      )
+                                    : (state.overview != null
+                                        ? _OverviewSection(
+                                            key: ValueKey(
+                                                'overview-${state.overview!.metadata.ticker}-${state.overview!.metrics.latestClose}'),
+                                            overview: state.overview!,
+                                            accentColor: accent,
+                                          )
+                                        : const SizedBox.shrink(
+                                            key: ValueKey('overview-empty'),
+                                          )),
                               ),
                             ),
                             SliverToBoxAdapter(
                               child: AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 500),
                                 transitionBuilder: _sectionTransitionBuilder,
-                                child: state.forecast == null
-                                    ? (state.isLoading
-                                        ? const _ForecastLoadingSkeleton()
-                                        : const SizedBox.shrink())
-                                    : _ForecastSection(
-                                        key: ValueKey(
-                                            'forecast-${state.forecast!.ticker}-${state.forecast!.forecast.length}'),
-                                        forecast: state.forecast!,
+                                child: state.isLoading
+                                    ? Column(
+                                        key: ValueKey('forecast-loading-${state.loadingCounter}'),
+                                        children: const [
+                                          _ForecastLoadingSkeleton(),
+                                        ],
+                                      )
+                                    : (state.forecast != null
+                                        ? _ForecastSection(
+                                            key: ValueKey(
+                                                'forecast-${state.forecast!.ticker}-${state.forecast!.forecast.length}'),
+                                            forecast: state.forecast!,
                                         overview: state.overview,
-                                        accentColor: accent,
-                                      ),
-                              ),
-                            ),
-                            SliverToBoxAdapter(
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 500),
-                                transitionBuilder: _sectionTransitionBuilder,
-                                child: state.sentiment == null
-                                    ? const SizedBox.shrink()
-                                    : _SentimentSection(
-                                        key: ValueKey(
-                                            'sentiment-${state.sentiment!.ticker}-${state.sentiment!.summary.total}'),
-                                        sentiment: state.sentiment!,
                                         accentColor: accent,
                                       ),
                               ),
@@ -643,21 +628,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         FilterChip(
                           showCheckmark: false,
-                          label: const Text('Include sentiment'),
-                          labelStyle: const TextStyle(color: Colors.white),
-                          selectedColor: accentColor.withAlphaFraction(0.25),
-                          backgroundColor: Colors.white.withAlphaFraction(0.05),
-                          side: BorderSide(
-                              color: (includeSentiment
-                                      ? accentColor
-                                      : Colors.white24)
-                                  .withAlphaFraction(0.7)),
-                          selected: includeSentiment,
-                          onSelected: (value) =>
-                              setState(() => includeSentiment = value),
-                        ),
-                        FilterChip(
-                          showCheckmark: false,
                           label: const Text('SMA-20'),
                           labelStyle: const TextStyle(color: Colors.white),
                           selectedColor: accentColor.withAlphaFraction(0.25),
@@ -729,7 +699,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               preset: preset,
                               interval: interval,
                               days: horizon,
-                              includeSentiment: includeSentiment,
                               sma20: showSma20,
                               sma50: showSma50,
                               ema12: showEma12,
@@ -926,6 +895,9 @@ class _OverviewSection extends StatelessWidget {
   }
 
   LineChartData _buildHistoryChart(List<PricePoint> history, Color accent) {
+    if (history.isEmpty) {
+      return LineChartData(lineBarsData: []);
+    }
     final minDate = history.first.date;
     final maxDate = history.last.date;
     final minValue = history.map((p) => p.close).reduce(min);
@@ -952,12 +924,8 @@ class _OverviewSection extends StatelessWidget {
 
     return LineChartData(
       lineTouchData: LineTouchData(
-        enabled: true,
         handleBuiltInTouches: true,
-        touchSpotThreshold: 20,
-        touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
-          // Explicit touch callback to ensure events are processed
-        },
+        touchSpotThreshold: 30,
         getTouchedSpotIndicator: (bar, indexes) {
           return indexes
               .map(
@@ -981,11 +949,15 @@ class _OverviewSection extends StatelessWidget {
               .toList();
         },
         touchTooltipData: LineTouchTooltipData(
-          tooltipBgColor: const Color(0xff0d1220).withAlphaFraction(0.95),
+          tooltipBgColor: const Color(0xff1a1f2e),
           tooltipRoundedRadius: 16,
           tooltipPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           tooltipMargin: 12,
+          tooltipBorder: BorderSide(
+            color: accent.withAlphaFraction(0.3),
+            width: 1.5,
+          ),
           fitInsideHorizontally: true,
           fitInsideVertically: true,
           getTooltipItems: (spots) {
@@ -1370,12 +1342,8 @@ class _ForecastSection extends StatelessWidget {
 
     return LineChartData(
       lineTouchData: LineTouchData(
-        enabled: true,
         handleBuiltInTouches: true,
-        touchSpotThreshold: 20,
-        touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
-          // Explicit touch callback to ensure events are processed
-        },
+        touchSpotThreshold: 30,
         getTouchedSpotIndicator: (bar, indexes) {
           return indexes
               .map(
@@ -1403,11 +1371,15 @@ class _ForecastSection extends StatelessWidget {
               .toList();
         },
         touchTooltipData: LineTouchTooltipData(
-          tooltipBgColor: const Color(0xff0d1220).withAlphaFraction(0.95),
+          tooltipBgColor: const Color(0xff1a1f2e),
           tooltipRoundedRadius: 16,
           tooltipPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           tooltipMargin: 12,
+          tooltipBorder: BorderSide(
+            color: Colors.white.withAlphaFraction(0.2),
+            width: 1.5,
+          ),
           fitInsideHorizontally: true,
           fitInsideVertically: true,
           getTooltipItems: (spots) {
@@ -1645,92 +1617,6 @@ class _ForecastSection extends StatelessWidget {
   }
 }
 
-class _SentimentSection extends StatelessWidget {
-  const _SentimentSection(
-      {super.key, required this.sentiment, required this.accentColor});
-
-  final SentimentResponse sentiment;
-  final Color accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final summary = sentiment.summary;
-    final hasData = summary.total > 0;
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 24),
-        SectionHeading(
-          title: 'News sentiment',
-          subtitle: hasData ? '${summary.total} articles in focus' : 'Sentiment analysis',
-          accentColor: accentColor,
-        ),
-        const SizedBox(height: 20),
-        if (!hasData)
-          GlassContainer(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Icon(Icons.newspaper, size: 48, color: accentColor.withAlphaFraction(0.5)),
-                const SizedBox(height: 16),
-                Text(
-                  'No recent news available',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'News sentiment data is currently unavailable for ${sentiment.ticker}.\nPlease try again later or check another ticker.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (hasData) ...[
-          _HorizontalMetricRow(
-            cards: [
-              AnimatedMetricCard(
-                title: 'Articles analysed',
-                value: '${summary.total}',
-                subtitle: 'Dominant: ${summary.dominantSentiment ?? 'N/A'}',
-                accentColor: accentColor,
-                icon: Icons.article_rounded,
-              ),
-              AnimatedMetricCard(
-                title: 'Average score',
-                value: summary.averageScore == null
-                    ? '—'
-                    : summary.averageScore!.toStringAsFixed(2),
-                subtitle:
-                    'Pos ${summary.positive} • Neu ${summary.neutral} • Neg ${summary.negative}',
-                accentColor: accentColor,
-                icon: Icons.sentiment_satisfied_alt_rounded,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          for (var i = 0; i < sentiment.records.length; i++)
-            _HeadlineTile(
-              key: ValueKey('headline-${sentiment.records[i].hashCode}'),
-              record: sentiment.records[i],
-              index: i,
-              accentColor: accentColor,
-            ),
-        ],
-      ],
-    );
-  }
-}
-
 class AnimatedMetricCard extends StatelessWidget {
   const AnimatedMetricCard({
     super.key,
@@ -1920,108 +1806,6 @@ class _HighlightChip extends StatelessWidget {
   }
 }
 
-class _HeadlineTile extends StatelessWidget {
-  const _HeadlineTile(
-      {super.key,
-      required this.record,
-      required this.index,
-      required this.accentColor});
-
-  final SentimentRecord record;
-  final int index;
-  final Color accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (record.sentiment.toLowerCase()) {
-      'positive' => Colors.greenAccent,
-      'negative' => Colors.orangeAccent,
-      _ => accentColor,
-    };
-    final dateText = record.published == null
-        ? '—'
-        : DateFormat.yMMMd().add_Hm().format(record.published!.toLocal());
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 400 + index * 60),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) => Opacity(
-        opacity: value,
-        child: Transform.translate(
-          offset: Offset(0, 26 * (1 - value)),
-          child: child,
-        ),
-      ),
-      child: GlassContainer(
-        margin: EdgeInsets.only(bottom: index == 0 ? 12 : 18),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        record.headline,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${record.publisher ?? 'Unknown source'} • $dateText',
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: color.withAlphaFraction(0.6)),
-                    color: color.withAlphaFraction(0.15),
-                  ),
-                  child: Text(
-                    record.sentiment.toUpperCase(),
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.bolt_rounded,
-                    size: 16, color: color.withAlphaFraction(0.8)),
-                const SizedBox(width: 6),
-                Text(
-                  'Score ${record.score.toStringAsFixed(2)}',
-                  style: const TextStyle(color: Colors.white60, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class GlassContainer extends StatelessWidget {
   const GlassContainer({
     super.key,
@@ -2176,39 +1960,6 @@ class _DashboardHeader extends StatelessWidget {
                   'Advanced stock forecasting powered by LSTM neural networks and real-time sentiment analysis. Get accurate price predictions and market insights.',
                   style: TextStyle(color: Colors.white70, fontSize: 13.5),
                 ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    _HeaderPill(
-                      icon: Icons.sell_outlined,
-                      label: state.params.ticker.toUpperCase(),
-                      accentColor: accentColor,
-                    ),
-                    if (state.models.isNotEmpty)
-                      _HeaderPill(
-                        icon: Icons.memory_rounded,
-                        label: '${state.models.length} models',
-                        accentColor: state.hasSavedLstmForTicker
-                            ? Colors.greenAccent
-                            : accentColor,
-                        subtle: !state.hasSavedLstmForTicker,
-                      ),
-                    _HeaderPill(
-                      icon: Icons.timer_rounded,
-                      label: 'Interval ${state.params.interval}',
-                      accentColor: accentColor,
-                      subtle: true,
-                    ),
-                    _HeaderPill(
-                      icon: Icons.calendar_month_rounded,
-                      label: 'Range ${state.params.preset}',
-                      accentColor: accentColor,
-                      subtle: true,
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -2345,15 +2096,15 @@ class _HelpButton extends StatelessWidget {
                 number: '4',
                 icon: Icons.trending_up_rounded,
                 title: 'Configure Forecast',
-                description: 'Set days & enable SMA/EMA indicators',
+                description: 'Set forecast days & enable indicators',
                 accentColor: accentColor,
               ),
               const SizedBox(height: 12),
               _HelpStep(
                 number: '5',
-                icon: Icons.sentiment_satisfied_alt_rounded,
-                title: 'Enable Sentiment',
-                description: 'Toggle for news sentiment analysis',
+                icon: Icons.show_chart_rounded,
+                title: 'Technical Indicators',
+                description: 'SMA-20/50: Moving avg trends • EMA-12/26: Fast signals',
                 accentColor: accentColor,
               ),
               const SizedBox(height: 12),
@@ -2366,47 +2117,6 @@ class _HelpButton extends StatelessWidget {
               ),
               
               const SizedBox(height: 16),
-              
-              // Bottom tip
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      accentColor.withAlphaFraction(0.15),
-                      accentColor.withAlphaFraction(0.08),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: accentColor.withAlphaFraction(0.25),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.tips_and_updates_rounded,
-                      color: accentColor,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Pro Tip: LSTM models provide the most accurate forecasts',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -2727,6 +2437,7 @@ class _BackgroundGridPainter extends CustomPainter {
     const spacing = 96.0;
     final gridPaint = Paint()
       ..color = baseColor
+     
       ..strokeWidth = 1;
 
     for (double x = 0; x <= size.width; x += spacing) {
@@ -2882,6 +2593,229 @@ class _ShimmerEffectState extends State<_ShimmerEffect>
         );
       },
       child: widget.child,
+    );
+  }
+}
+
+class _RollingLoadingMessage extends StatefulWidget {
+  const _RollingLoadingMessage({this.accentColor});
+
+  final Color? accentColor;
+
+  @override
+  State<_RollingLoadingMessage> createState() => _RollingLoadingMessageState();
+}
+
+class _RollingLoadingMessageState extends State<_RollingLoadingMessage> {
+  int _currentMessageIndex = 0;
+  late Timer _timer;
+
+  final List<Map<String, dynamic>> _messages = [
+    {
+      'icon': Icons.rocket_launch_rounded,
+      'text': 'Initializing AI engine...',
+    },
+    {
+      'icon': Icons.cloud_download_rounded,
+      'text': 'Fetching real-time market data...',
+    },
+    {
+      'icon': Icons.analytics_rounded,
+      'text': 'Analyzing historical trends...',
+    },
+    {
+      'icon': Icons.speed_rounded,
+      'text': 'Calculating price momentum...',
+    },
+    {
+      'icon': Icons.psychology_rounded,
+      'text': 'Running AI predictions...',
+    },
+    {
+      'icon': Icons.dataset_rounded,
+      'text': 'Processing training datasets...',
+    },
+    {
+      'icon': Icons.functions_rounded,
+      'text': 'Computing LSTM neural networks...',
+    },
+    {
+      'icon': Icons.calculate_rounded,
+      'text': 'Computing technical indicators...',
+    },
+    {
+      'icon': Icons.show_chart_rounded,
+      'text': 'Generating SMA and EMA signals...',
+    },
+    {
+      'icon': Icons.timeline_rounded,
+      'text': 'Building forecast models...',
+    },
+    {
+      'icon': Icons.data_exploration_rounded,
+      'text': 'Detecting price patterns...',
+    },
+    {
+      'icon': Icons.trending_up_rounded,
+      'text': 'Analyzing market volatility...',
+    },
+    {
+      'icon': Icons.query_stats_rounded,
+      'text': 'Evaluating statistical significance...',
+    },
+    {
+      'icon': Icons.insights_rounded,
+      'text': 'Synthesizing market insights...',
+    },
+    {
+      'icon': Icons.autorenew_rounded,
+      'text': 'Calibrating prediction accuracy...',
+    },
+    {
+      'icon': Icons.tune_rounded,
+      'text': 'Fine-tuning model parameters...',
+    },
+    {
+      'icon': Icons.assessment_rounded,
+      'text': 'Validating forecast reliability...',
+    },
+    {
+      'icon': Icons.scatter_plot_rounded,
+      'text': 'Mapping data correlations...',
+    },
+    {
+      'icon': Icons.compress_rounded,
+      'text': 'Optimizing data structures...',
+    },
+    {
+      'icon': Icons.pending_actions_rounded,
+      'text': 'Almost there, finalizing insights...',
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentMessageIndex = (_currentMessageIndex + 1) % _messages.length;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = widget.accentColor ?? Colors.blueAccent;
+    final currentMessage = _messages[_currentMessageIndex];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            accent.withAlphaFraction(0.1),
+            accent.withAlphaFraction(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: accent.withAlphaFraction(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Animated loading icon
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOut,
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: 0.8 + (value * 0.2),
+                child: Opacity(
+                  opacity: 0.6 + (value * 0.4),
+                  child: child,
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: accent.withAlphaFraction(0.2),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withAlphaFraction(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                currentMessage['icon'] as IconData,
+                color: accent,
+                size: 24,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // Animated text message
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 500),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.3),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    )),
+                    child: child,
+                  ),
+                );
+              },
+              child: Text(
+                currentMessage['text'] as String,
+                key: ValueKey(_currentMessageIndex),
+                style: TextStyle(
+                  color: Colors.white.withAlphaFraction(0.9),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ),
+          
+          // Loading spinner
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation<Color>(accent),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
