@@ -1,9 +1,47 @@
-# Interactive UI Controls - Technical Indicators Feature
+# AI Powered Stock Forecast - Complete Feature List
 
 ## Overview
-Added comprehensive UI controls to showcase robust Flutter-backend integration with real-time parameter control of AI model behavior.
+This document tracks all major features and enhancements implemented in the AI Powered Stock Forecast application, combining FastAPI backend with Flutter web frontend.
 
-## Features Implemented
+## Recent Updates (October 2025)
+
+### Hero Header Redesign ✨
+- ✅ Redesigned hero section with prominent "AI Powered Stock Forecast" title
+- ✅ Added comprehensive 3-sentence project description
+- ✅ Repositioned help button to top-right corner using Stack/Positioned layout
+- ✅ Removed feature pills for cleaner design
+- ✅ Gradient text effects with shader masks
+- ✅ Animated loading icon in hero container
+- ✅ Glass morphism with backdrop blur effects
+
+### Chart Improvements 📊
+- ✅ Fixed tooltip display issues on forecast chart
+- ✅ Implemented smart tooltip positioning (24px margin)
+- ✅ Simplified tooltip logic for better reliability
+- ✅ Added color-coded tooltips matching chart lines
+- ✅ Enhanced tooltip content with date formatting and currency display
+- ✅ Fixed axis tick generation for both X and Y axes
+- ✅ Proper grid line spacing and visibility
+
+### UI/UX Enhancements 🎨
+- ✅ Professional gradient background (navy blue tones)
+- ✅ Removed complex grid patterns for cleaner look
+- ✅ Glass container design system with frosted glass effect
+- ✅ Animated metric cards with icons and color accents
+- ✅ Shimmer loading effects for skeleton screens
+- ✅ Rolling loading messages with 20+ different status updates
+- ✅ Smooth fade-in/slide transitions throughout
+- ✅ Dynamic ticker-based accent colors
+
+### Branding Updates 🏷️
+- ✅ Updated app title from "AI Stock Insights" to "AI Powered Stock Forecast"
+- ✅ Updated help dialog title to match new branding
+- ✅ Updated browser tab title
+- ✅ Maintained consistent branding across all UI elements
+
+## Core Features
+
+### 1. Interactive UI Controls - Technical Indicators
 
 ### 1. Backend API Enhancement (app.py)
 - ✅ Added `calculate_technical_indicators()` function with SMA and EMA calculations
