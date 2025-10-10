@@ -2028,7 +2028,7 @@ class _DashboardHeader extends StatelessWidget {
                                   ],
                                 ).createShader(bounds),
                                 child: Text(
-                                  'AI Stock Insights',
+                                  'AI Powered Stock Forecast',
                                   style: TextStyle(
                                     fontSize: 42,
                                     fontWeight: FontWeight.w900,
@@ -2130,7 +2130,7 @@ class _HelpButton extends StatelessWidget {
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'How to Use AI Stock Insights',
+                      'How to Use AI Powered Stock Forecast Model',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
