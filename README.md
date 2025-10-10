@@ -11,15 +11,7 @@ The Flutter frontend can be deployed to Vercel as a static site, while the backe
 
 ## 🎯 Live Demo
 
-> **Note**: Replace with your actual Vercel deployment URL once live
-
-## 📸 Screenshots
-
-### Dashboard Overview
-The main dashboard features a prominent hero header, interactive price charts, and comprehensive market metrics with a modern glass morphism design.
-
-### Forecast Chart
-Advanced LSTM-based predictions with technical indicator overlays (SMA/EMA) and smart tooltips for detailed analysis.
+> (https://stock-prediction-green.vercel.app/)
 
 ## Features
 
@@ -221,25 +213,6 @@ Any ticker with a matching model+scaler pair automatically appears in the `/mode
 - **yfinance** for market data
 - **VADER** for sentiment analysis
 - **Pandas/NumPy** for data processing
-
-## Recent Updates
-
-### UI/UX Improvements (October 2025)
-- ✅ Redesigned hero header with prominent title and comprehensive description
-- ✅ Fixed tooltip positioning on forecast and history charts
-- ✅ Added professional gradient background (removed complex patterns)
-- ✅ Implemented glass morphism design system throughout
-- ✅ Added animated loading states with rolling messages
-- ✅ Repositioned help button to top-right corner for better accessibility
-- ✅ Enhanced chart tooltips with better formatting and color coding
-- ✅ Updated branding from "AI Stock Insights" to "AI Powered Stock Forecast"
-
-### Technical Improvements
-- ✅ Implemented proper chart axis tick generation
-- ✅ Added technical indicator overlays (SMA-20/50, EMA-12/26)
-- ✅ Improved tooltip logic with smart positioning
-- ✅ Added skeleton loaders for better perceived performance
-- ✅ Optimized build process with `--no-tree-shake-icons` flag
 
 ## Next steps
 
