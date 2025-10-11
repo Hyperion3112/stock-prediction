@@ -347,6 +347,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final insets = MediaQuery.of(context).padding;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final horizontalPadding = isMobile ? 12.0 : 20.0;
+    
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
@@ -363,7 +367,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   slivers: [
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                        padding: EdgeInsets.fromLTRB(horizontalPadding, isMobile ? 8 : 12, horizontalPadding, 0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -387,7 +391,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     SliverPadding(
-                      padding: EdgeInsets.fromLTRB(20, 0, 20, max(insets.bottom, 16)),
+                      padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, max(insets.bottom, 16)),
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
                           _buildControls(context, state, accent),
@@ -1614,13 +1618,19 @@ class AnimatedMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     final highlight = accentColor ?? Theme.of(context).colorScheme.secondary;
     final subtitleColor = isPositive == null
         ? Colors.white70
         : (isPositive! ? Colors.greenAccent : Colors.orangeAccent);
 
     return GlassContainer(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 14 : 22,
+        vertical: isMobile ? 14 : 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -1630,10 +1640,10 @@ class AnimatedMetricCard extends StatelessWidget {
             children: [
               if (icon != null)
                 Container(
-                  padding: const EdgeInsets.all(11),
+                  padding: EdgeInsets.all(isMobile ? 8 : 11),
                   decoration: BoxDecoration(
                     color: highlight.withAlphaFraction(0.18),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(isMobile ? 10 : 14),
                     boxShadow: [
                       BoxShadow(
                         color: highlight.withAlphaFraction(0.2),
@@ -1642,23 +1652,23 @@ class AnimatedMetricCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Icon(icon, color: highlight, size: 22),
+                  child: Icon(icon, color: highlight, size: isMobile ? 18 : 22),
                 ),
-              if (icon != null) const SizedBox(width: 14),
+              if (icon != null) SizedBox(width: isMobile ? 10 : 14),
               Expanded(
                 child: Text(
                   title.toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white60,
-                    letterSpacing: 1.3,
-                    fontSize: 10.5,
+                    letterSpacing: isMobile ? 1.0 : 1.3,
+                    fontSize: isMobile ? 9.5 : 10.5,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: isMobile ? 10 : 14),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 400),
             transitionBuilder: (child, animation) {
@@ -1677,8 +1687,8 @@ class AnimatedMetricCard extends StatelessWidget {
             child: Text(
               value,
               key: ValueKey(value),
-              style: const TextStyle(
-                fontSize: 26,
+              style: TextStyle(
+                fontSize: isMobile ? 20 : 26,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
                 letterSpacing: -0.5,
@@ -1686,12 +1696,12 @@ class AnimatedMetricCard extends StatelessWidget {
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: isMobile ? 8 : 10),
             Text(
               subtitle!,
               style: TextStyle(
                 color: subtitleColor,
-                fontSize: 12.5,
+                fontSize: isMobile ? 11.5 : 12.5,
                 fontWeight: FontWeight.w500,
                 height: 1.3,
               ),
@@ -1865,13 +1875,16 @@ class SectionHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     return Row(
       children: [
         Container(
-          width: 6,
-          height: 48,
+          width: isMobile ? 4 : 6,
+          height: isMobile ? 38 : 48,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(isMobile ? 12 : 16),
             gradient: LinearGradient(
               colors: [
                 accentColor.withAlphaFraction(0.75),
@@ -1882,7 +1895,7 @@ class SectionHeading extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: isMobile ? 12 : 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1892,12 +1905,16 @@ class SectionHeading extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
+                      fontSize: isMobile ? 20 : null,
                     ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: isMobile ? 3 : 4),
               Text(
                 subtitle,
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(
+                  color: Colors.white70, 
+                  fontSize: isMobile ? 12 : 13,
+                ),
               ),
             ],
           ),
@@ -1915,6 +1932,10 @@ class _DashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 900;
+    
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1927,26 +1948,31 @@ class _DashboardHeader extends StatelessWidget {
           ],
           stops: const [0.0, 0.5, 1.0],
         ),
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(isMobile ? 20 : 32),
         border: Border.all(
           color: accentColor.withAlphaFraction(0.3),
-          width: 2,
+          width: isMobile ? 1.5 : 2,
         ),
         boxShadow: [
           BoxShadow(
             color: accentColor.withAlphaFraction(0.2),
-            blurRadius: 30,
+            blurRadius: isMobile ? 15 : 30,
             spreadRadius: 0,
-            offset: const Offset(0, 10),
+            offset: Offset(0, isMobile ? 5 : 10),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(isMobile ? 20 : 32),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(40, 40, 40, 50),
+            padding: EdgeInsets.fromLTRB(
+              isMobile ? 16 : (isTablet ? 24 : 40),
+              isMobile ? 20 : (isTablet ? 30 : 40),
+              isMobile ? 16 : (isTablet ? 24 : 40),
+              isMobile ? 24 : (isTablet ? 35 : 50),
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -1972,48 +1998,50 @@ class _DashboardHeader extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                accentColor.withAlphaFraction(0.3),
-                                accentColor.withAlphaFraction(0.15),
+                        if (!isMobile) ...[
+                          Container(
+                            padding: EdgeInsets.all(isTablet ? 12 : 16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  accentColor.withAlphaFraction(0.3),
+                                  accentColor.withAlphaFraction(0.15),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(isTablet ? 16 : 20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accentColor.withAlphaFraction(0.4),
+                                  blurRadius: isTablet ? 15 : 20,
+                                  spreadRadius: 2,
+                                ),
                               ],
                             ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accentColor.withAlphaFraction(0.4),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 400),
-                            child: state.isLoading
-                                ? SizedBox(
-                                    key: const ValueKey('loading'),
-                                    width: 40,
-                                    height: 40,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 3.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 400),
+                              child: state.isLoading
+                                  ? SizedBox(
+                                      key: const ValueKey('loading'),
+                                      width: isTablet ? 32 : 40,
+                                      height: isTablet ? 32 : 40,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 3.5,
+                                        valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.auto_graph_rounded,
+                                      key: const ValueKey('idle'),
+                                      color: accentColor,
+                                      size: isTablet ? 32 : 40,
                                     ),
-                                  )
-                                : Icon(
-                                    Icons.auto_graph_rounded,
-                                    key: const ValueKey('idle'),
-                                    color: accentColor,
-                                    size: 40,
-                                  ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 24),
+                          SizedBox(width: isTablet ? 16 : 24),
+                        ],
                         Flexible(
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
                             children: [
                               ShaderMask(
                                 shaderCallback: (bounds) => LinearGradient(
@@ -2024,8 +2052,9 @@ class _DashboardHeader extends StatelessWidget {
                                 ).createShader(bounds),
                                 child: Text(
                                   'AI Powered Stock Forecast',
+                                  textAlign: isMobile ? TextAlign.center : TextAlign.left,
                                   style: TextStyle(
-                                    fontSize: 42,
+                                    fontSize: isMobile ? 24 : (isTablet ? 32 : 42),
                                     fontWeight: FontWeight.w900,
                                     color: Colors.white,
                                     letterSpacing: -0.5,
@@ -2034,35 +2063,36 @@ class _DashboardHeader extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Container(
-                                height: 4,
-                                width: 80,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      accentColor,
-                                      accentColor.withAlphaFraction(0.3),
-                                      Colors.transparent,
-                                    ],
+                              if (!isMobile)
+                                Container(
+                                  height: 4,
+                                  width: isTablet ? 60 : 80,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        accentColor,
+                                        accentColor.withAlphaFraction(0.3),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(2),
                                   ),
-                                  borderRadius: BorderRadius.circular(2),
                                 ),
-                              ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: isMobile ? 16 : (isTablet ? 20 : 28)),
                     // Comprehensive description
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : (isTablet ? 10 : 20)),
                       child: Text(
                         'A cutting-edge financial analysis platform that leverages LSTM (Long Short-Term Memory) neural networks to predict stock price movements with unprecedented accuracy. By combining advanced deep learning algorithms with real-time sentiment analysis from news and social media, this application provides actionable market insights and forecasts to help you make informed investment decisions. Analyze historical trends, visualize technical indicators, and discover data-driven predictions for your favorite stocks.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withAlphaFraction(0.85),
-                          fontSize: 15,
+                          fontSize: isMobile ? 13 : (isTablet ? 14 : 15),
                           fontWeight: FontWeight.w400,
                           height: 1.6,
                           letterSpacing: 0.2,
@@ -2088,10 +2118,13 @@ class _HelpButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     return Tooltip(
       richMessage: WidgetSpan(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 380),
+          constraints: BoxConstraints(maxWidth: isMobile ? screenWidth - 40 : 380),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2238,17 +2271,25 @@ class _HelpButton extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.all(8),
       preferBelow: false,
-      child: IconButton(
-        onPressed: () {},
-        icon: Icon(
-          Icons.help_outline_rounded,
-          color: accentColor,
-          size: 24,
-        ),
-        style: IconButton.styleFrom(
-          backgroundColor: accentColor.withAlphaFraction(0.15),
-          padding: const EdgeInsets.all(8),
-        ),
+      child: _buildIconButton(context),
+    );
+  }
+
+  Widget _buildIconButton(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final iconSize = isMobile ? 20.0 : 24.0;
+    
+    return IconButton(
+      onPressed: () {},
+      icon: Icon(
+        Icons.help_outline_rounded,
+        color: accentColor,
+        size: iconSize,
+      ),
+      style: IconButton.styleFrom(
+        backgroundColor: accentColor.withAlphaFraction(0.15),
+        padding: EdgeInsets.all(isMobile ? 6 : 8),
       ),
     );
   }
