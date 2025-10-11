@@ -2019,13 +2019,80 @@ class _DashboardHeader extends StatelessWidget {
   }
 
   Widget _buildHeroContent(bool isMobile, bool isTablet) {
+    // Different descriptions for mobile vs desktop
+    final description = isMobile
+        ? 'Leverage LSTM neural networks and real-time sentiment analysis to predict stock price movements and make informed investment decisions.'
+        : 'A cutting-edge financial analysis platform that leverages LSTM (Long Short-Term Memory) neural networks to predict stock price movements with unprecedented accuracy. By combining advanced deep learning algorithms with real-time sentiment analysis from news and social media, this application provides actionable market insights and forecasts to help you make informed investment decisions. Analyze historical trends, visualize technical indicators, and discover data-driven predictions for your favorite stocks.';
+    
     return Column(
       children: [
         // Main title with animation
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (!isMobile) ...[
+        if (isMobile) ...[
+          // Mobile: Icon above title
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  accentColor.withAlphaFraction(0.3),
+                  accentColor.withAlphaFraction(0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: accentColor.withAlphaFraction(0.4),
+                  blurRadius: 15,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              child: state.isLoading
+                  ? const SizedBox(
+                      key: ValueKey('loading'),
+                      width: 32,
+                      height: 32,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Icon(
+                      Icons.auto_graph_rounded,
+                      key: const ValueKey('idle'),
+                      color: accentColor,
+                      size: 32,
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Title
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: [
+                Colors.white,
+                accentColor.withAlphaFraction(0.9),
+              ],
+            ).createShader(bounds),
+            child: Text(
+              'AI Powered Stock Forecast',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: -0.5,
+                height: 1.2,
+              ),
+            ),
+          ),
+        ] else ...[
+          // Desktop/Tablet: Icon and title side by side
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               Container(
                 padding: EdgeInsets.all(isTablet ? 12 : 16),
                 decoration: BoxDecoration(
@@ -2065,32 +2132,30 @@ class _DashboardHeader extends StatelessWidget {
                 ),
               ),
               SizedBox(width: isTablet ? 16 : 24),
-            ],
-            Flexible(
-              child: Column(
-                crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-                children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        Colors.white,
-                        accentColor.withAlphaFraction(0.9),
-                      ],
-                    ).createShader(bounds),
-                    child: Text(
-                      'AI Powered Stock Forecast',
-                      textAlign: isMobile ? TextAlign.center : TextAlign.left,
-                      style: TextStyle(
-                        fontSize: isMobile ? 24 : (isTablet ? 32 : 42),
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                        height: 1.1,
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [
+                          Colors.white,
+                          accentColor.withAlphaFraction(0.9),
+                        ],
+                      ).createShader(bounds),
+                      child: Text(
+                        'AI Powered Stock Forecast',
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          fontSize: isTablet ? 32 : 42,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                          height: 1.1,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  if (!isMobile)
+                    const SizedBox(height: 4),
                     Container(
                       height: 4,
                       width: isTablet ? 60 : 80,
@@ -2105,23 +2170,24 @@ class _DashboardHeader extends StatelessWidget {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-        SizedBox(height: isMobile ? 16 : (isTablet ? 20 : 28)),
+            ],
+          ),
+        ],
+        SizedBox(height: isMobile ? 12 : (isTablet ? 20 : 28)),
         // Comprehensive description
         Padding(
           padding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : (isTablet ? 10 : 20)),
           child: Text(
-            'A cutting-edge financial analysis platform that leverages LSTM (Long Short-Term Memory) neural networks to predict stock price movements with unprecedented accuracy. By combining advanced deep learning algorithms with real-time sentiment analysis from news and social media, this application provides actionable market insights and forecasts to help you make informed investment decisions. Analyze historical trends, visualize technical indicators, and discover data-driven predictions for your favorite stocks.',
+            description,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white.withAlphaFraction(0.85),
-              fontSize: isMobile ? 13 : (isTablet ? 14 : 15),
+              fontSize: isMobile ? 14 : (isTablet ? 14 : 15),
               fontWeight: FontWeight.w400,
-              height: 1.6,
+              height: 1.5,
               letterSpacing: 0.2,
             ),
           ),
