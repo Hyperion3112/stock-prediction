@@ -1983,129 +1983,150 @@ class _DashboardHeader extends StatelessWidget {
                 ],
               ),
             ),
-            child: Stack(
+            child: Column(
               children: [
-                // Help button in top right corner
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: _HelpButton(accentColor: accentColor),
-                ),
-                // Main content
-                Column(
-                  children: [
-                    // Main title with animation
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (!isMobile) ...[
-                          Container(
-                            padding: EdgeInsets.all(isTablet ? 12 : 16),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  accentColor.withAlphaFraction(0.3),
-                                  accentColor.withAlphaFraction(0.15),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(isTablet ? 16 : 20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: accentColor.withAlphaFraction(0.4),
-                                  blurRadius: isTablet ? 15 : 20,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 400),
-                              child: state.isLoading
-                                  ? SizedBox(
-                                      key: const ValueKey('loading'),
-                                      width: isTablet ? 32 : 40,
-                                      height: isTablet ? 32 : 40,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 3.5,
-                                        valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.auto_graph_rounded,
-                                      key: const ValueKey('idle'),
-                                      color: accentColor,
-                                      size: isTablet ? 32 : 40,
-                                    ),
-                            ),
-                          ),
-                          SizedBox(width: isTablet ? 16 : 24),
-                        ],
-                        Flexible(
-                          child: Column(
-                            crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-                            children: [
-                              ShaderMask(
-                                shaderCallback: (bounds) => LinearGradient(
-                                  colors: [
-                                    Colors.white,
-                                    accentColor.withAlphaFraction(0.9),
-                                  ],
-                                ).createShader(bounds),
-                                child: Text(
-                                  'AI Powered Stock Forecast',
-                                  textAlign: isMobile ? TextAlign.center : TextAlign.left,
-                                  style: TextStyle(
-                                    fontSize: isMobile ? 24 : (isTablet ? 32 : 42),
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white,
-                                    letterSpacing: -0.5,
-                                    height: 1.1,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              if (!isMobile)
-                                Container(
-                                  height: 4,
-                                  width: isTablet ? 60 : 80,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        accentColor,
-                                        accentColor.withAlphaFraction(0.3),
-                                        Colors.transparent,
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: isMobile ? 16 : (isTablet ? 20 : 28)),
-                    // Comprehensive description
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : (isTablet ? 10 : 20)),
-                      child: Text(
-                        'A cutting-edge financial analysis platform that leverages LSTM (Long Short-Term Memory) neural networks to predict stock price movements with unprecedented accuracy. By combining advanced deep learning algorithms with real-time sentiment analysis from news and social media, this application provides actionable market insights and forecasts to help you make informed investment decisions. Analyze historical trends, visualize technical indicators, and discover data-driven predictions for your favorite stocks.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withAlphaFraction(0.85),
-                          fontSize: isMobile ? 13 : (isTablet ? 14 : 15),
-                          fontWeight: FontWeight.w400,
-                          height: 1.6,
-                          letterSpacing: 0.2,
-                        ),
+                // Help button row (mobile: inline, desktop: positioned)
+                if (isMobile)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _HelpButton(accentColor: accentColor),
+                    ],
+                  ),
+                if (isMobile) const SizedBox(height: 12),
+                // Main content with conditional Stack
+                if (!isMobile)
+                  Stack(
+                    children: [
+                      // Help button in top right corner (desktop/tablet only)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: _HelpButton(accentColor: accentColor),
                       ),
-                    ),
-                  ],
-                ),
+                      // Main content column
+                      _buildHeroContent(isMobile, isTablet),
+                    ],
+                  )
+                else
+                  _buildHeroContent(isMobile, isTablet),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeroContent(bool isMobile, bool isTablet) {
+    return Column(
+      children: [
+        // Main title with animation
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!isMobile) ...[
+              Container(
+                padding: EdgeInsets.all(isTablet ? 12 : 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      accentColor.withAlphaFraction(0.3),
+                      accentColor.withAlphaFraction(0.15),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(isTablet ? 16 : 20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withAlphaFraction(0.4),
+                      blurRadius: isTablet ? 15 : 20,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  child: state.isLoading
+                      ? SizedBox(
+                          key: const ValueKey('loading'),
+                          width: isTablet ? 32 : 40,
+                          height: isTablet ? 32 : 40,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                          ),
+                        )
+                      : Icon(
+                          Icons.auto_graph_rounded,
+                          key: const ValueKey('idle'),
+                          color: accentColor,
+                          size: isTablet ? 32 : 40,
+                        ),
+                ),
+              ),
+              SizedBox(width: isTablet ? 16 : 24),
+            ],
+            Flexible(
+              child: Column(
+                crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        Colors.white,
+                        accentColor.withAlphaFraction(0.9),
+                      ],
+                    ).createShader(bounds),
+                    child: Text(
+                      'AI Powered Stock Forecast',
+                      textAlign: isMobile ? TextAlign.center : TextAlign.left,
+                      style: TextStyle(
+                        fontSize: isMobile ? 24 : (isTablet ? 32 : 42),
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (!isMobile)
+                    Container(
+                      height: 4,
+                      width: isTablet ? 60 : 80,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            accentColor,
+                            accentColor.withAlphaFraction(0.3),
+                            Colors.transparent,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: isMobile ? 16 : (isTablet ? 20 : 28)),
+        // Comprehensive description
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : (isTablet ? 10 : 20)),
+          child: Text(
+            'A cutting-edge financial analysis platform that leverages LSTM (Long Short-Term Memory) neural networks to predict stock price movements with unprecedented accuracy. By combining advanced deep learning algorithms with real-time sentiment analysis from news and social media, this application provides actionable market insights and forecasts to help you make informed investment decisions. Analyze historical trends, visualize technical indicators, and discover data-driven predictions for your favorite stocks.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withAlphaFraction(0.85),
+              fontSize: isMobile ? 13 : (isTablet ? 14 : 15),
+              fontWeight: FontWeight.w400,
+              height: 1.6,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
