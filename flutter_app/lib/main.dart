@@ -1968,10 +1968,10 @@ class _DashboardHeader extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             padding: EdgeInsets.fromLTRB(
-              isMobile ? 16 : (isTablet ? 24 : 40),
-              isMobile ? 20 : (isTablet ? 30 : 40),
-              isMobile ? 16 : (isTablet ? 24 : 40),
-              isMobile ? 24 : (isTablet ? 35 : 50),
+              isMobile ? 20 : (isTablet ? 24 : 40),
+              isMobile ? 24 : (isTablet ? 30 : 40),
+              isMobile ? 20 : (isTablet ? 24 : 40),
+              isMobile ? 28 : (isTablet ? 35 : 50),
             ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -2021,7 +2021,7 @@ class _DashboardHeader extends StatelessWidget {
   Widget _buildHeroContent(bool isMobile, bool isTablet) {
     // Different descriptions for mobile vs desktop
     final description = isMobile
-        ? 'Leverage LSTM neural networks and real-time sentiment analysis to predict stock price movements and make informed investment decisions.'
+        ? 'AI-powered stock predictions using LSTM neural networks and real-time sentiment analysis.'
         : 'A cutting-edge financial analysis platform that leverages LSTM (Long Short-Term Memory) neural networks to predict stock price movements with unprecedented accuracy. By combining advanced deep learning algorithms with real-time sentiment analysis from news and social media, this application provides actionable market insights and forecasts to help you make informed investment decisions. Analyze historical trends, visualize technical indicators, and discover data-driven predictions for your favorite stocks.';
     
     return Column(
@@ -2067,7 +2067,7 @@ class _DashboardHeader extends StatelessWidget {
                     ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           // Title
           ShaderMask(
             shaderCallback: (bounds) => LinearGradient(
@@ -2176,7 +2176,7 @@ class _DashboardHeader extends StatelessWidget {
             ],
           ),
         ],
-        SizedBox(height: isMobile ? 12 : (isTablet ? 20 : 28)),
+        SizedBox(height: isMobile ? 16 : (isTablet ? 20 : 28)),
         // Comprehensive description
         Padding(
           padding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : (isTablet ? 10 : 20)),
