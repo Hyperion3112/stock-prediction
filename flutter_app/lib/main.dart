@@ -358,115 +358,110 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _AnimatedGradientBackground(accentColor: accent),
               SafeArea(
-                child: Padding(
-                  padding:
-                      EdgeInsets.fromLTRB(20, 12, 20, max(insets.bottom, 16)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _DashboardHeader(
-                        state: state,
-                        accentColor: accent,
-                      ),
-                      const SizedBox(height: 16),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 400),
-                        child: state.isLoading
-                            ? const LinearProgressIndicator(
-                                minHeight: 3,
-                                backgroundColor: Colors.white12,
-                              )
-                            : const SizedBox(height: 3),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: CustomScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          slivers: [
-                            SliverToBoxAdapter(
-                              child: _buildControls(context, state, accent),
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _DashboardHeader(
+                              state: state,
+                              accentColor: accent,
                             ),
-                            if (state.errorMessage != null)
-                              SliverToBoxAdapter(
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 12),
-                                  child: GlassContainer(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Icon(Icons.warning_amber_rounded,
-                                            color: Colors.orangeAccent),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            state.errorMessage!,
-                                            style: const TextStyle(
-                                                color: Colors.orangeAccent),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            SliverToBoxAdapter(
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 500),
-                                transitionBuilder: _sectionTransitionBuilder,
-                                child: state.isLoading
-                                    ? Column(
-                                        key: ValueKey('overview-loading-${state.loadingCounter}'),
-                                        children: [
-                                          _RollingLoadingMessage(accentColor: accent),
-                                          const _OverviewLoadingSkeleton(),
-                                        ],
-                                      )
-                                    : (state.overview != null
-                                        ? _OverviewSection(
-                                            key: ValueKey(
-                                                'overview-${state.overview!.metadata.ticker}-${state.overview!.metrics.latestClose}'),
-                                            overview: state.overview!,
-                                            accentColor: accent,
-                                          )
-                                        : const SizedBox.shrink(
-                                            key: ValueKey('overview-empty'),
-                                          )),
-                              ),
+                            const SizedBox(height: 16),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 400),
+                              child: state.isLoading
+                                  ? const LinearProgressIndicator(
+                                      minHeight: 3,
+                                      backgroundColor: Colors.white12,
+                                    )
+                                  : const SizedBox(height: 3),
                             ),
-                            SliverToBoxAdapter(
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 500),
-                                transitionBuilder: _sectionTransitionBuilder,
-                                child: state.isLoading
-                                    ? Column(
-                                        key: ValueKey('forecast-loading-${state.loadingCounter}'),
-                                        children: const [
-                                          _ForecastLoadingSkeleton(),
-                                        ],
-                                      )
-                                    : (state.forecast != null
-                                        ? _ForecastSection(
-                                            key: ValueKey(
-                                                'forecast-${state.forecast!.ticker}-${state.forecast!.forecast.length}'),
-                                            forecast: state.forecast!,
-                                            overview: state.overview,
-                                            accentColor: accent,
-                                          )
-                                        : const SizedBox.shrink(
-                                            key: ValueKey('forecast-empty'),
-                                          )),
-                              ),
-                            ),
-                            const SliverToBoxAdapter(
-                                child: SizedBox(height: 24)),
+                            const SizedBox(height: 8),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(20, 0, 20, max(insets.bottom, 16)),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          _buildControls(context, state, accent),
+                          if (state.errorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: GlassContainer(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.warning_amber_rounded,
+                                        color: Colors.orangeAccent),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        state.errorMessage!,
+                                        style: const TextStyle(
+                                            color: Colors.orangeAccent),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 500),
+                            transitionBuilder: _sectionTransitionBuilder,
+                            child: state.isLoading
+                                ? Column(
+                                    key: ValueKey('overview-loading-${state.loadingCounter}'),
+                                    children: [
+                                      _RollingLoadingMessage(accentColor: accent),
+                                      const _OverviewLoadingSkeleton(),
+                                    ],
+                                  )
+                                : (state.overview != null
+                                    ? _OverviewSection(
+                                        key: ValueKey(
+                                            'overview-${state.overview!.metadata.ticker}-${state.overview!.metrics.latestClose}'),
+                                        overview: state.overview!,
+                                        accentColor: accent,
+                                      )
+                                    : const SizedBox.shrink(
+                                        key: ValueKey('overview-empty'),
+                                      )),
+                          ),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 500),
+                            transitionBuilder: _sectionTransitionBuilder,
+                            child: state.isLoading
+                                ? Column(
+                                    key: ValueKey('forecast-loading-${state.loadingCounter}'),
+                                    children: const [
+                                      _ForecastLoadingSkeleton(),
+                                    ],
+                                  )
+                                : (state.forecast != null
+                                    ? _ForecastSection(
+                                        key: ValueKey(
+                                            'forecast-${state.forecast!.ticker}-${state.forecast!.forecast.length}'),
+                                        forecast: state.forecast!,
+                                        overview: state.overview,
+                                        accentColor: accent,
+                                      )
+                                    : const SizedBox.shrink(
+                                        key: ValueKey('forecast-empty'),
+                                      )),
+                          ),
+                          const SizedBox(height: 24),
+                        ]),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
